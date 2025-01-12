@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, Suspense } from 'react';
     import { Canvas, useLoader, useFrame } from '@react-three/fiber';
     import { OrbitControls, PerspectiveCamera, Text, Instances, Instance } from '@react-three/drei';
-    import { AmbientLight, DirectionalLight, AudioLoader, Audio } from 'three';
+    import { AmbientLight, DirectionalLight } from 'three';
     import { FontLoader } from 'three/examples/jsm/loaders/FontLoader';
     import { generateSudoku, validateMove, isSolved } from './utils/sudoku';
     import useStore from './store';
@@ -20,25 +20,14 @@ import React, { useState, useRef, useEffect, Suspense } from 'react';
       const font = useLoader(FontLoader, '/fonts/helvetiker_regular.typeface.json');
       const [hoveredCell, setHoveredCell] = useState(null);
       const theme = useStore((state) => state.theme);
-      const soundEnabled = useStore((state) => state.soundEnabled);
-      const clickSound = useLoader(AudioLoader, '/sounds/click.mp3');
-      const audioRef = useRef(new Audio(new AudioListener()));
+      const [animations, setAnimations] = useState({});
 
       useEffect(() => {
         setCurrentGrid(initialGrid);
       }, [initialGrid]);
 
-      useEffect(() => {
-        if (clickSound) {
-          audioRef.current.setBuffer(clickSound);
-        }
-      }, [clickSound]);
-
       const handleCellClick = (row, col) => {
         setSelectedCell({ row, col });
-        if (soundEnabled) {
-          audioRef.current.play();
-        }
       };
 
       const handleCellChange = (row, col, num) => {
@@ -56,6 +45,7 @@ import React, { useState, useRef, useEffect, Suspense } from 'react';
           }
         }
         setConflicts(newConflicts);
+        setAnimations(prev => ({ ...prev, [`${row}-${col}`]: { start: Date.now(), num } }));
       };
 
       const cubeColor = (row, col, cell) => {
@@ -65,35 +55,55 @@ import React, { useState, useRef, useEffect, Suspense } from 'react';
         return theme === 'light' ? '#888' : '#aaa';
       };
 
+      useFrame(() => {
+        setAnimations(prev => {
+          const updatedAnimations = { ...prev };
+          for (const key in updatedAnimations) {
+            const anim = updatedAnimations[key];
+            const progress = (Date.now() - anim.start) / 200;
+            if (progress < 1) {
+              updatedAnimations[key] = { ...anim, progress };
+            } else {
+              delete updatedAnimations[key];
+            }
+          }
+          return updatedAnimations;
+        });
+      });
+
       return (
         <group ref={gridRef}>
           <Instances limit={gridSize * gridSize} material={new THREE.MeshStandardMaterial()}>
             {currentGrid.map((row, rowIndex) =>
-              row.map((cell, colIndex) => (
-                <Instance
-                  key={`${rowIndex}-${colIndex}`}
-                  position={[colIndex - gridSize / 2 + 0.5, rowIndex - gridSize / 2 + 0.5, 0]}
-                  onClick={() => handleCellClick(rowIndex, colIndex)}
-                  onPointerOver={() => setHoveredCell({ row: rowIndex, col: colIndex })}
-                  onPointerOut={() => setHoveredCell(null)}
-                  scale={hoveredCell?.row === rowIndex && hoveredCell?.col === colIndex ? 1.1 : 1}
-                  color={cubeColor(rowIndex, colIndex, cell)}
-                >
-                  <boxGeometry args={[cubeSize, cubeSize, cubeSize]} />
-                  {cell !== 0 && font && (
-                    <Text
-                      position={[0, 0, cubeSize / 2 + 0.01]}
-                      font={font}
-                      fontSize={0.5}
-                      color={theme === 'light' ? 'white' : 'black'}
-                      anchorX="center"
-                      anchorY="middle"
-                    >
-                      {String(cell)}
-                    </Text>
-                  )}
-                </Instance>
-              ))
+              row.map((cell, colIndex) => {
+                const anim = animations[`${rowIndex}-${colIndex}`];
+                const scale = anim ? 1 + Math.sin(anim.progress * Math.PI) * 0.2 : 1;
+                return (
+                  <Instance
+                    key={`${rowIndex}-${colIndex}`}
+                    position={[colIndex - gridSize / 2 + 0.5, rowIndex - gridSize / 2 + 0.5, 0]}
+                    onClick={() => handleCellClick(rowIndex, colIndex)}
+                    onPointerOver={() => setHoveredCell({ row: rowIndex, col: colIndex })}
+                    onPointerOut={() => setHoveredCell(null)}
+                    scale={hoveredCell?.row === rowIndex && hoveredCell?.col === colIndex ? scale * 1.1 : scale}
+                    color={cubeColor(rowIndex, colIndex, cell)}
+                  >
+                    <boxGeometry args={[cubeSize, cubeSize, cubeSize]} />
+                    {cell !== 0 && font && (
+                      <Text
+                        position={[0, 0, cubeSize / 2 + 0.01]}
+                        font={font}
+                        fontSize={0.5}
+                        color={theme === 'light' ? 'white' : 'black'}
+                        anchorX="center"
+                        anchorY="middle"
+                      >
+                        {String(cell)}
+                      </Text>
+                    )}
+                  </Instance>
+                );
+              })
             )}
           </Instances>
         </group>
@@ -154,8 +164,6 @@ import React, { useState, useRef, useEffect, Suspense } from 'react';
       const [isSolvedState, setIsSolvedState] = useState(false);
       const theme = useStore((state) => state.theme);
       const setTheme = useStore((state) => state.setTheme);
-      const soundEnabled = useStore((state) => state.soundEnabled);
-      const setSoundEnabled = useStore((state) => state.setSoundEnabled);
       const [loading, setLoading] = useState(true);
 
       useEffect(() => {
@@ -249,10 +257,6 @@ import React, { useState, useRef, useEffect, Suspense } from 'react';
         setTheme(theme === 'light' ? 'dark' : 'light');
       };
 
-      const handleSoundToggle = () => {
-        setSoundEnabled(!soundEnabled);
-      };
-
       return (
         <div className={`app-container ${theme}`}>
           {loading ? (
@@ -276,15 +280,12 @@ import React, { useState, useRef, useEffect, Suspense } from 'react';
                 <button onClick={handleThemeChange}>
                   {theme === 'light' ? 'Dark Theme' : 'Light Theme'}
                 </button>
-                <button onClick={handleSoundToggle}>
-                  {soundEnabled ? 'Disable Sound' : 'Enable Sound'}
-                </button>
                 {isSolvedState && <div className="victory-message">Congratulations! You solved the puzzle!</div>}
               </div>
               <Canvas>
                 <PerspectiveCamera makeDefault position={[0, 0, 20]} />
-                <AmbientLight intensity={0.5} />
-                <DirectionalLight position={[10, 10, 5]} intensity={0.8} />
+                <ambientLight intensity={0.5} />
+                <directionalLight position={[10, 10, 5]} intensity={0.8} />
                 <OrbitControls />
                 <Suspense fallback={null}>
                   {game && (
