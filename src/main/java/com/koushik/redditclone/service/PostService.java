@@ -9,6 +9,12 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.koushik.redditclone.dto.CreatePostRequest;
 import com.koushik.redditclone.dto.PostResponse;
+import java.util.Arrays;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
 import com.koushik.redditclone.model.ImageData;
 import com.koushik.redditclone.model.Post;
 import com.koushik.redditclone.model.User;
@@ -25,8 +31,11 @@ public class PostService {
     private final NotificationService notificationService;
 
     public PostResponse createPost(CreatePostRequest request, User currentUser) throws IOException {
+        List<String> hashtags = extractHashtags(request.getContent());
+
         Post post = Post.builder()
                 .content(request.getContent())
+                .hashtags(hashtags)
                 .user(currentUser)
                 .build();
 
@@ -47,6 +56,14 @@ public class PostService {
         );
         
         return mapToPostResponse(savedPost);
+    }
+
+    private List<String> extractHashtags(String content) {
+        Pattern pattern = Pattern.compile("#\\w+");
+        Matcher matcher = pattern.matcher(content);
+        return matcher.results()
+                .map(matchResult -> matchResult.group())
+                .collect(Collectors.toList());
     }
 
     public List<PostResponse> getAllPosts() {
