@@ -22,6 +22,7 @@ public class PostService {
 
     private final PostRepository postRepository;
     private final FileStorageService fileStorageService;
+    private final NotificationService notificationService;
 
     public PostResponse createPost(CreatePostRequest request, User currentUser) throws IOException {
         Post post = Post.builder()
@@ -39,6 +40,12 @@ public class PostService {
         }
 
         Post savedPost = postRepository.save(post);
+        
+        // Notify all followers about the new post
+        currentUser.getFollowers().forEach(follower -> 
+            notificationService.notifyNewPost(follower.getId(), currentUser.getUsername())
+        );
+        
         return mapToPostResponse(savedPost);
     }
 

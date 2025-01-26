@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 public class UserService {
     
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     @Transactional
     public void followUser(User currentUser, Long userIdToFollow) {
@@ -28,6 +29,9 @@ public class UserService {
 
         userRepository.save(currentUser);
         userRepository.save(userToFollow);
+
+        // Send notification to followed user
+        notificationService.notifyNewFollower(userToFollow.getId(), currentUser.getUsername());
     }
 
     @Transactional
