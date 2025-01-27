@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { CreatePost } from '../posts/CreatePost'
 import { PostCard } from '../posts/PostCard'
 import { Post } from '../../types'
@@ -74,10 +74,11 @@ export function Home() {
     <div className="space-y-6">
       <CreatePost onSuccess={() => fetchPosts(1)} />
       <div className="space-y-6">
-        {allPosts.map((post) => (
-          <PostCard key={post.id} post={post} onLike={handleLike} />
-        ))}
-        {allPosts.length === 0 && (
+        {allPosts && allPosts.length > 0 ? (
+          allPosts.map((post) => (
+            <PostCard key={post.id} post={post} onLike={handleLike} />
+          ))
+        ) : (
           <p className="text-center text-muted-foreground">No posts yet</p>
         )}
         {hasMore && (
