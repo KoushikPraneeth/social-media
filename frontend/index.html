@@ -1,6 +1,24 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
   <head>
+    <script>
+      // Add initial theme class based on localStorage or system preference
+      (function() {
+        const storageKey = "vite-ui-theme";
+        const theme = localStorage.getItem(storageKey) || "system";
+        const root = document.documentElement;
+        
+        if (theme === "system") {
+          root.classList.add(
+            window.matchMedia("(prefers-color-scheme: dark)").matches
+              ? "dark"
+              : "light"
+          );
+        } else {
+          root.classList.add(theme);
+        }
+      })();
+    </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>WebContainer App</title>

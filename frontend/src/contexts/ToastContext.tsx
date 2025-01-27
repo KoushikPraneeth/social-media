@@ -44,8 +44,8 @@ export function ToastContextProvider({ children }: { children: React.ReactNode }
             key={id}
             className={
               type === "error"
-                ? "border-red-500 bg-red-50 text-red-900"
-                : "border-green-500 bg-green-50 text-green-900"
+                ? "border-destructive bg-destructive/10 text-destructive dark:border-red-400 dark:bg-red-950/50 dark:text-red-300"
+                : "border-green-500 bg-green-500/10 text-green-700 dark:border-green-400 dark:bg-green-950/50 dark:text-green-300"
             }
           >
             <div className="grid gap-1">

@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './contexts/auth/AuthContext'
-import { ThemeProvider } from './contexts/theme/ThemeContext'
+import { ThemeProvider } from './providers/theme-provider'
 import { ToastContextProvider } from './contexts/ToastContext'
 import { Login } from './components/auth/Login'
 import { Register } from './components/auth/Register'
@@ -26,49 +26,47 @@ function MainLayout({ children }: { children: React.ReactNode }) {
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider>
-        <ToastContextProvider>
-          <AuthProvider>
-            <BrowserRouter>
-              <Layout>
-                <Routes>
-                  <Route path="/login" element={
-                    <PublicOnlyRoute>
-                      <Login />
-                    </PublicOnlyRoute>
-                  } />
-                  <Route path="/register" element={
-                    <PublicOnlyRoute>
-                      <Register />
-                    </PublicOnlyRoute>
-                  } />
-                  <Route path="/" element={
-                    <ProtectedRoute>
-                      <MainLayout>
-                        <Home />
-                      </MainLayout>
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/user/:userId" element={
-                    <ProtectedRoute>
-                      <MainLayout>
-                        <UserProfile />
-                      </MainLayout>
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/hashtag/:tag" element={
-                    <ProtectedRoute>
-                      <MainLayout>
-                        <HashtagView />
-                      </MainLayout>
-                    </ProtectedRoute>
-                  } />
-                </Routes>
-              </Layout>
-            </BrowserRouter>
-          </AuthProvider>
-        </ToastContextProvider>
-      </ThemeProvider>
+      <ToastContextProvider>
+        <AuthProvider>
+          <BrowserRouter>
+            <Layout>
+              <Routes>
+                <Route path="/login" element={
+                  <PublicOnlyRoute>
+                    <Login />
+                  </PublicOnlyRoute>
+                } />
+                <Route path="/register" element={
+                  <PublicOnlyRoute>
+                    <Register />
+                  </PublicOnlyRoute>
+                } />
+                <Route path="/" element={
+                  <ProtectedRoute>
+                    <MainLayout>
+                      <Home />
+                    </MainLayout>
+                  </ProtectedRoute>
+                } />
+                <Route path="/user/:userId" element={
+                  <ProtectedRoute>
+                    <MainLayout>
+                      <UserProfile />
+                    </MainLayout>
+                  </ProtectedRoute>
+                } />
+                <Route path="/hashtag/:tag" element={
+                  <ProtectedRoute>
+                    <MainLayout>
+                      <HashtagView />
+                    </MainLayout>
+                  </ProtectedRoute>
+                } />
+              </Routes>
+            </Layout>
+          </BrowserRouter>
+        </AuthProvider>
+      </ToastContextProvider>
     </ErrorBoundary>
   )
 }

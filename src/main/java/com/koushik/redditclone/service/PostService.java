@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.koushik.redditclone.dto.CreatePostRequest;
@@ -30,6 +31,7 @@ public class PostService {
     private final FileStorageService fileStorageService;
     private final NotificationService notificationService;
 
+    @Transactional
     public PostResponse createPost(CreatePostRequest request, User currentUser) throws IOException {
         List<String> hashtags = extractHashtags(request.getContent());
 
@@ -49,12 +51,6 @@ public class PostService {
         }
 
         Post savedPost = postRepository.save(post);
-        
-        // Notify all followers about the new post
-        currentUser.getFollowers().forEach(follower -> 
-            notificationService.notifyNewPost(follower.getId(), currentUser.getUsername())
-        );
-        
         return mapToPostResponse(savedPost);
     }
 

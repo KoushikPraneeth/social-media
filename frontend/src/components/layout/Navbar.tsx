@@ -1,12 +1,18 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/auth/AuthContext'
-import { useTheme } from '../../contexts/theme/ThemeContext'
+import { useTheme } from '../../providers/theme-provider'
 import { Button } from '../ui/button'
 import { Moon, Sun, LogOut } from 'lucide-react'
 
 export function Navbar() {
   const { isAuthenticated, logout } = useAuth()
-  const { theme, toggleTheme } = useTheme()
+  const { theme, setTheme } = useTheme()
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'dark' ? 'light' : 'dark'
+    console.log('Toggling theme from', theme, 'to', newTheme)
+    setTheme(newTheme)
+  }
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -24,6 +30,7 @@ export function Navbar() {
               size="icon"
               onClick={toggleTheme}
               className="h-9 w-9"
+              title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
             >
               {theme === 'dark' ? (
                 <Sun className="h-4 w-4" />
