@@ -25,8 +25,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (username: string, password: string) => {
     try {
       const response = await auth.login(username, password)
-      localStorage.setItem('token', response.data.data.token)
-      setIsAuthenticated(true)
+      if (response.data && response.data.token) {
+        localStorage.setItem('token', response.data.token)
+        setIsAuthenticated(true)
+      } else {
+        throw new Error('No token received from server')
+      }
     } catch (error) {
       console.error('Login failed:', error)
       throw error

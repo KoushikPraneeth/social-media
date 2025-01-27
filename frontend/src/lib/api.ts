@@ -1,5 +1,5 @@
 import axios from 'axios'
-import type { ApiResponse, PaginatedResponse } from '../types'
+import type { ApiResponse, PaginatedResponse, AuthResponse } from '../types'
 
 const BASE_URL = 'http://localhost:8080'
 
@@ -20,14 +20,14 @@ export const auth = {
     const formData = new FormData()
     formData.append('username', username)
     formData.append('password', password)
-    return api.post<ApiResponse<{ token: string }>>('/auth/login', formData)
+    return api.post<AuthResponse>('/auth/login', formData)
   },
   register: (username: string, email: string, password: string) => {
     const formData = new FormData()
     formData.append('username', username)
     formData.append('email', email)
     formData.append('password', password)
-    return api.post<ApiResponse<{ token: string }>>('/auth/register', formData)
+    return api.post<AuthResponse>('/auth/register', formData)
   },
 }
 
