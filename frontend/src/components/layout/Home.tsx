@@ -34,18 +34,60 @@ export function Home() {
     fetchPosts()
   }, [])
 
-  const handleLike = async (postId: number) => {
+    const handleLike = async (postId: number) => {
     try {
-      await posts.like(postId)
+      const post = allPosts.find(p => p.id === postId)
+      if (post?.isLiked) {
+        await posts.unlike(postId)
+        setAllPosts(prev =>
+          prev.map(p =>
+            p.id === postId
+              ? { ...p, likesCount: p.likesCount - 1, isLiked: false }
+              : p
+          )
+        )
+      } else {
+        await posts.like(postId)
+        setAllPosts(prev =>
+          prev.map(p =>
+            p.id === postId
+              ? { ...p, likesCount: p.likesCount + 1, isLiked: true }
+              : p
+          )
+        )
+      }
+    } catch (error) {
+      console.error('Failed to like/unlike post:', error)
+    }
+  }
+
+  const handleComment = async (postId: number, content: string) => {
+    try {
+      const comment = await posts.addComment(postId, content)
       setAllPosts(prev =>
-        prev.map(post =>
-          post.id === postId
-            ? { ...post, likes: post.likes + 1, isLiked: true }
-            : post
+        prev.map(p =>
+          p.id === postId
+            ? { ...p, commentsCount: p.commentsCount + 1 }
+            : p
         )
       )
     } catch (error) {
-      console.error('Failed to like post:', error)
+      console.error('Failed to add comment:', error)
+    }
+  }
+
+  const handleShare = async (postId: number) => {
+    try {
+      await posts.share(postId)
+      setAllPosts(prev =>
+        prev.map(p =>
+          p.id === postId
+            ? { ...p, shareCount: p.shareCount + 1 }
+            : p
+        )
+      )
+    } catch (error) {
+      console.error('Failed to share post:', error)
     }
   }
 
@@ -77,7 +119,13 @@ export function Home() {
       <div className="space-y-6">
         {allPosts && allPosts.length > 0 ? (
           allPosts.map((post) => (
-            <PostCard key={post.id} post={post} onLike={handleLike} />
+            <PostCard 
+              key={post.id} 
+              post={post} 
+              onLike={handleLike}
+              onComment={handleComment}
+              onShare={handleShare}
+            />
           ))
         ) : (
           <p className="text-center text-muted-foreground">No posts yet</p>

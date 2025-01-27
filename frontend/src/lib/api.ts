@@ -50,6 +50,8 @@ export const posts = {
     api.post(`/api/posts/${postId}/comments`, { content }),
   getComments: (postId: number, page = 1, limit = 10) =>
     api.get(`/api/posts/${postId}/comments`, { params: { page, limit } }),
+  share: (postId: number) =>
+    api.post(`/api/posts/${postId}/share`),
 }
 
 export const trends = {

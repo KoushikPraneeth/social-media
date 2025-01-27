@@ -12,12 +12,12 @@ export interface Post {
   id: number
   content: string
   imageUrl?: string
-  createdAt: string
+  timestamp: string
   user: User
-  likes: number
-  isLiked?: boolean
-  commentsCount?: number
-  sharesCount?: number
+  likesCount: number
+  commentsCount: number
+  shareCount: number
+  isLiked: boolean
 }
 
 export interface Comment {
