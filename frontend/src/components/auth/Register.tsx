@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { useAuth } from '../../contexts/auth/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '../ui/button'
@@ -13,12 +13,19 @@ export function Register() {
   const { register } = useAuth()
   const navigate = useNavigate()
 
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
+    setSuccessMessage(null)
     try {
-      await register(username, email, password)
-      navigate('/')
+      const result = await register(username, email, password)
+      setSuccessMessage(result.message)
+      // Redirect to login after 2 seconds
+      setTimeout(() => {
+        navigate('/login', { state: { message: result.message } })
+      }, 2000)
     } catch (err: any) {
       setError(err.message || 'Registration failed')
     }
@@ -28,6 +35,7 @@ export function Register() {
     <div className="flex justify-center items-center h-screen">
       <div className="w-full max-w-md p-6 bg-white rounded-md shadow-md">
         <h2 className="text-2xl font-semibold mb-4">Register</h2>
+        {successMessage && <p className="text-green-500 mb-4">{successMessage}</p>}
         {error && <p className="text-red-500 mb-4">{error}</p>}
         <form onSubmit={handleSubmit}>
           <div className="mb-4">

@@ -1,11 +1,11 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import { auth } from '../../lib/api'
 
 interface AuthContextType {
   user: null
   isAuthenticated: boolean
   login: (username: string, password: string) => Promise<void>
-  register: (username: string, email: string, password: string) => Promise<void>
+  register: (username: string, email: string, password: string) => Promise<{ success: boolean; message: string }>
   logout: () => void
 }
 
@@ -24,8 +24,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (username: string, password: string) => {
     try {
-      const { data } = await auth.login(username, password)
-      localStorage.setItem('token', data.token)
+      const response = await auth.login(username, password)
+      localStorage.setItem('token', response.data.data.token)
       setIsAuthenticated(true)
     } catch (error) {
       console.error('Login failed:', error)
@@ -35,9 +35,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = async (username: string, email: string, password: string) => {
     try {
-      const { data } = await auth.register(username, email, password)
-      localStorage.setItem('token', data.token)
-      setIsAuthenticated(true)
+      await auth.register(username, email, password)
+      // Don't automatically authenticate after registration
+      return { success: true, message: 'Registration successful! Please log in.' }
     } catch (error) {
       console.error('Registration failed:', error)
       throw error

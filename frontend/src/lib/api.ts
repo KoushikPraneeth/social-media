@@ -5,9 +5,6 @@ const BASE_URL = 'http://localhost:8080'
 
 export const api = axios.create({
   baseURL: BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
 })
 
 api.interceptors.request.use((config) => {
@@ -19,10 +16,19 @@ api.interceptors.request.use((config) => {
 })
 
 export const auth = {
-  login: (username: string, password: string) =>
-    api.post<ApiResponse<{ token: string }>>('/auth/login', { username, password }),
-  register: (username: string, email: string, password: string) =>
-    api.post<ApiResponse<{ token: string }>>('/auth/register', { username, email, password }),
+  login: (username: string, password: string) => {
+    const formData = new FormData()
+    formData.append('username', username)
+    formData.append('password', password)
+    return api.post<ApiResponse<{ token: string }>>('/auth/login', formData)
+  },
+  register: (username: string, email: string, password: string) => {
+    const formData = new FormData()
+    formData.append('username', username)
+    formData.append('email', email)
+    formData.append('password', password)
+    return api.post<ApiResponse<{ token: string }>>('/auth/register', formData)
+  },
 }
 
 export const posts = {
