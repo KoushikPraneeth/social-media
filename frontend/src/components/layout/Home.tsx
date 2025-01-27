@@ -15,13 +15,14 @@ export function Home() {
 
   const fetchPosts = async (pageNum: number = 1) => {
     try {
-      const { data } = await posts.getAll(pageNum)
+      const response = await posts.getAll(pageNum - 1) // Spring Page starts at 0
+      const { data, hasMore } = response.data
       if (pageNum === 1) {
-        setAllPosts(data.data)
+        setAllPosts(data)
       } else {
-        setAllPosts(prev => [...prev, ...data.data])
+        setAllPosts(prev => [...prev, ...data])
       }
-      setHasMore(data.hasMore)
+      setHasMore(hasMore)
     } catch (err: any) {
       setError(err.message || 'Failed to fetch posts')
     } finally {
