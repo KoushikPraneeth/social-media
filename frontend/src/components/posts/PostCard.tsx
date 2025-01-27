@@ -1,9 +1,12 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Heart, MessageCircle, Share2 } from 'lucide-react'
 import { Button } from '../ui/button'
-import { Post } from '../../types'
+import { Post, Comment } from '../../types'
 import { formatDate } from '../../lib/utils'
+import { CommentsList } from './CommentsList'
+import { ShareModal } from './ShareModal'
+import { posts } from '../../lib/api'
 
 interface PostCardProps {
   post: Post
@@ -15,13 +18,75 @@ interface PostCardProps {
 export function PostCard({ post, onLike, onComment, onShare }: PostCardProps) {
   const [isCommenting, setIsCommenting] = useState(false)
   const [commentContent, setCommentContent] = useState('')
+  const [comments, setComments] = useState<Comment[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false)
+  const [areCommentsVisible, setAreCommentsVisible] = useState(false)
 
-  const handleCommentSubmit = () => {
-    if (commentContent.trim() && onComment) {
-      onComment(post.id, commentContent)
-      setCommentContent('')
-      setIsCommenting(false)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    console.log('areCommentsVisible changed:', areCommentsVisible)
+    if (areCommentsVisible) {
+      loadComments()
     }
+  }, [areCommentsVisible])
+
+  const loadComments = async () => {
+    try {
+      console.log('Loading comments for post:', post.id)
+      setIsLoading(true)
+      setError(null)
+      const response = await posts.getComments(post.id)
+      console.log('Comments loaded:', response.data.data)
+      setComments(response.data.data)
+    } catch (error) {
+      console.error('Failed to load comments:', error)
+      setError('Failed to load comments. Please try again.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleCommentSubmit = async () => {
+    if (commentContent.trim() && onComment) {
+      try {
+        console.log('Adding comment:', commentContent)
+        await onComment(post.id, commentContent)
+        const newComment = await posts.addComment(post.id, commentContent)
+        console.log('Comment added:', newComment.data)
+        setComments(prev => [newComment.data, ...prev])
+        setCommentContent('')
+        setIsCommenting(false)
+        // Ensure comments section remains visible after posting
+        setAreCommentsVisible(true)
+      } catch (error) {
+        console.error('Failed to add comment:', error)
+        setError('Failed to add comment. Please try again.')
+      }
+    }
+  }
+
+  const handleShare = async () => {
+    try {
+      console.log('Sharing post:', post.id)
+      await onShare?.(post.id)
+      setIsShareModalOpen(true)
+    } catch (error) {
+      console.error('Failed to share post:', error)
+      setError('Failed to share post. Please try again.')
+    }
+  }
+
+  const toggleComments = () => {
+    console.log('Toggling comments visibility')
+    setAreCommentsVisible(!areCommentsVisible)
+    setIsCommenting(false)
+  }
+
+  const showCommentInput = () => {
+    console.log('Showing comment input')
+    setIsCommenting(true)
   }
 
   return (
@@ -70,7 +135,7 @@ export function PostCard({ post, onLike, onComment, onShare }: PostCardProps) {
           variant="ghost" 
           size="sm" 
           className="flex items-center space-x-2"
-          onClick={() => setIsCommenting(!isCommenting)}
+          onClick={toggleComments}
         >
           <MessageCircle className="h-4 w-4" />
           <span className="text-xs">{post.commentsCount || 0}</span>
@@ -79,12 +144,29 @@ export function PostCard({ post, onLike, onComment, onShare }: PostCardProps) {
           variant="ghost" 
           size="sm" 
           className="flex items-center space-x-2"
-          onClick={() => onShare?.(post.id)}
+          onClick={handleShare}
         >
           <Share2 className="h-4 w-4" />
           <span className="text-xs">{post.shareCount || 0}</span>
         </Button>
+        <ShareModal 
+          postId={post.id} 
+          isOpen={isShareModalOpen} 
+          onClose={() => setIsShareModalOpen(false)} 
+        />
       </div>
+      {areCommentsVisible && !isCommenting && (
+        <div className="border-t p-4">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="w-full"
+            onClick={showCommentInput}
+          >
+            Write a comment...
+          </Button>
+        </div>
+      )}
       {isCommenting && (
         <div className="border-t p-4">
           <div className="flex gap-2">
@@ -104,6 +186,24 @@ export function PostCard({ post, onLike, onComment, onShare }: PostCardProps) {
               Post
             </Button>
           </div>
+        </div>
+      )}
+      {areCommentsVisible && (
+        <div className="border-t p-4">
+          {error && (
+            <div className="mb-4 text-sm text-red-500">{error}</div>
+          )}
+          {isLoading ? (
+            <div className="flex justify-center">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            </div>
+          ) : comments.length > 0 ? (
+            <CommentsList comments={comments} />
+          ) : (
+            <div className="text-center text-sm text-muted-foreground">
+              No comments yet
+            </div>
+          )}
         </div>
       )}
     </div>
