@@ -5,7 +5,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Lob;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -23,10 +22,9 @@ public class ImageData {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String name;
-    private String type;
+    private String name;    // Original filename
+    private String type;    // MIME type
 
-    @Lob
-    @Column(length = 1000000)  // 1MB max size
-    private byte[] data;
+    @Column(length = 1000)
+    private String path;    // File path on disk
 }

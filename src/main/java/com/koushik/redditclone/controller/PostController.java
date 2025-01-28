@@ -5,13 +5,7 @@ import java.io.IOException;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.koushik.redditclone.dto.CreatePostRequest;
 import com.koushik.redditclone.dto.PageResponse;
@@ -49,5 +43,46 @@ public class PostController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         return ResponseEntity.ok(postService.getUserPosts(userId, page, size));
+    }
+
+    @PostMapping("/{postId}/comments")
+    public ResponseEntity<?> addComment(
+            @PathVariable Long postId,
+            @RequestBody String content,
+            @AuthenticationPrincipal User currentUser) {
+        postService.addComment(postId, content, currentUser);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/{postId}/comments")
+    public ResponseEntity<?> getComments(
+            @PathVariable Long postId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(postService.getComments(postId, page, size));
+    }
+
+    @PostMapping("/{postId}/like")
+    public ResponseEntity<?> likePost(
+            @PathVariable Long postId,
+            @AuthenticationPrincipal User currentUser) {
+        postService.likePost(postId, currentUser);
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/{postId}/like")
+    public ResponseEntity<?> unlikePost(
+            @PathVariable Long postId,
+            @AuthenticationPrincipal User currentUser) {
+        postService.unlikePost(postId, currentUser);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/{postId}/share")
+    public ResponseEntity<?> sharePost(
+            @PathVariable Long postId,
+            @AuthenticationPrincipal User currentUser) {
+        postService.sharePost(postId, currentUser);
+        return ResponseEntity.ok().build();
     }
 }

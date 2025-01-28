@@ -16,6 +16,9 @@ public class Notification {
 
     public enum NotificationType {
         NEW_FOLLOWER,
-        NEW_POST
+        NEW_POST,
+        COMMENT,
+        LIKE,
+        SHARE
     }
 }

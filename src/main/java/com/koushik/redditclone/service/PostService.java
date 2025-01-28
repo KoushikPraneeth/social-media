@@ -13,6 +13,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.koushik.redditclone.dto.CreatePostRequest;
 import com.koushik.redditclone.dto.PageResponse;
@@ -46,7 +48,7 @@ public class PostService {
         MultipartFile imageFile = request.getImage();
         if (imageFile != null && !imageFile.isEmpty()) {
             String fileName = fileStorageService.storeFile(imageFile);
-            ImageData image = fileStorageService.getFile(fileName)
+            ImageData image = fileStorageService.getImageData(fileName)
                     .orElseThrow(() -> new RuntimeException("Failed to store image"));
             post.setImage(image);
         }
@@ -95,6 +97,68 @@ public class PostService {
                 .limit(size)
                 .hasMore(postPage.hasNext())
                 .build();
+    }
+
+    @Transactional
+    public void addComment(Long postId, String content, User currentUser) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Post not found"));
+        
+        post.setCommentsCount(post.getCommentsCount() + 1);
+        postRepository.save(post);
+        
+        // Notify post owner
+        if (!post.getUser().equals(currentUser)) {
+            notificationService.notifyComment(post.getUser(), currentUser, post);
+        }
+    }
+
+    public PageResponse<?> getComments(Long postId, int page, int size) {
+        // For now, return empty response since we don't store actual comments
+        return PageResponse.builder()
+                .data(List.of())
+                .total(0L)
+                .page(page)
+                .limit(size)
+                .hasMore(false)
+                .build();
+    }
+
+    @Transactional
+    public void likePost(Long postId, User currentUser) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Post not found"));
+        
+        post.getLikes().add(currentUser);
+        postRepository.save(post);
+
+        // Notify post owner
+        if (!post.getUser().equals(currentUser)) {
+            notificationService.notifyLike(post.getUser(), currentUser, post);
+        }
+    }
+
+    @Transactional
+    public void unlikePost(Long postId, User currentUser) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Post not found"));
+        
+        post.getLikes().remove(currentUser);
+        postRepository.save(post);
+    }
+
+    @Transactional
+    public void sharePost(Long postId, User currentUser) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Post not found"));
+        
+        post.setShareCount(post.getShareCount() + 1);
+        postRepository.save(post);
+
+        // Notify post owner
+        if (!post.getUser().equals(currentUser)) {
+            notificationService.notifyShare(post.getUser(), currentUser, post);
+        }
     }
 
     private PostResponse mapToPostResponse(Post post) {

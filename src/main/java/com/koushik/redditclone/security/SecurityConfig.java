@@ -55,7 +55,8 @@ public class SecurityConfig {
             }))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/auth/**", "/h2-console/**", "/actuator/**").permitAll()
-                .requestMatchers("/api/posts/**", "/api/users/**", "/api/images/**").authenticated()
+                .requestMatchers("/uploads/**", "/api/images/**").permitAll()  // Allow public access to images
+                .requestMatchers("/api/posts/**", "/api/users/**").authenticated()
                 .anyRequest().permitAll()
             )
             .sessionManagement(session -> session
