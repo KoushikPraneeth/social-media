@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import com.koushik.redditclone.dto.CommentRequest;
 import com.koushik.redditclone.dto.CreatePostRequest;
 import com.koushik.redditclone.dto.PageResponse;
 import com.koushik.redditclone.dto.PostResponse;
@@ -48,9 +49,9 @@ public class PostController {
     @PostMapping("/{postId}/comments")
     public ResponseEntity<?> addComment(
             @PathVariable Long postId,
-            @RequestBody String content,
+            @RequestBody CommentRequest request,
             @AuthenticationPrincipal User currentUser) {
-        postService.addComment(postId, content, currentUser);
+        postService.addComment(postId, request.getContent(), currentUser);
         return ResponseEntity.ok().build();
     }
 
