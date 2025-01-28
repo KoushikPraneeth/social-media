@@ -1,7 +1,7 @@
 import axios from 'axios'
 import type { ApiResponse, PaginatedResponse, AuthResponse } from '../types'
 
-const BASE_URL = 'http://localhost:8080'
+export const BASE_URL = 'http://localhost:8080'
 
 export const api = axios.create({
   baseURL: BASE_URL,

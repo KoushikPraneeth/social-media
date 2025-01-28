@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { Heart, MessageCircle, Share2 } from 'lucide-react'
 import { Button } from '../ui/button'
 import { Post, Comment } from '../../types'
-import { formatDate } from '../../lib/utils'
+import { formatDate, getFullImageUrl } from '../../lib/utils'
 import { CommentsList } from './CommentsList'
 import { ShareModal } from './ShareModal'
 import { posts } from '../../lib/api'
@@ -113,7 +113,7 @@ export function PostCard({ post, onLike, onComment, onShare }: PostCardProps) {
           {post.imageUrl && (
             <div className="relative aspect-[4/3] overflow-hidden rounded-lg">
               <img
-                src={post.imageUrl}
+                src={getFullImageUrl(post.imageUrl)}
                 alt="Post image"
                 className="absolute inset-0 h-full w-full object-cover"
               />
