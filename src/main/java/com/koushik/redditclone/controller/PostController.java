@@ -1,7 +1,6 @@
 package com.koushik.redditclone.controller;
 
 import java.io.IOException;
-import java.util.List;
 
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -11,9 +10,11 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.koushik.redditclone.dto.CreatePostRequest;
+import com.koushik.redditclone.dto.PageResponse;
 import com.koushik.redditclone.dto.PostResponse;
 import com.koushik.redditclone.model.User;
 import com.koushik.redditclone.service.PostService;
@@ -36,14 +37,17 @@ public class PostController {
     }
 
     @GetMapping
-    public ResponseEntity<List<PostResponse>> getAllPosts() {
-        List<PostResponse> posts = postService.getAllPosts();
-        return ResponseEntity.ok(posts);
+    public ResponseEntity<PageResponse<PostResponse>> getAllPosts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(postService.getAllPosts(page, size));
     }
 
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<PostResponse>> getUserPosts(@PathVariable Long userId) {
-        List<PostResponse> posts = postService.getUserPosts(userId);
-        return ResponseEntity.ok(posts);
+    public ResponseEntity<PageResponse<PostResponse>> getUserPosts(
+            @PathVariable Long userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(postService.getUserPosts(userId, page, size));
     }
 }

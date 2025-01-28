@@ -17,6 +17,10 @@ public class PostResponse {
     private String imageUrl;  // URL to access the image
     private LocalDateTime timestamp;
     private UserSummary user;
+    private int likesCount;
+    private int commentsCount;
+    private int shareCount;
+    private boolean isLiked;
 
     @Data
     @Builder
