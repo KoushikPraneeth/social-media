@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.koushik.redditclone.dto.CommentRequest;
 import com.koushik.redditclone.dto.CreatePostRequest;
 import com.koushik.redditclone.dto.PageResponse;
 import com.koushik.redditclone.dto.PostResponse;
@@ -100,16 +102,20 @@ public class PostService {
     }
 
     @Transactional
-    public void addComment(Long postId, String content, User currentUser) {
+    public void addComment(Long postId, CommentRequest request, User currentUser) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Post not found"));
         
         post.setCommentsCount(post.getCommentsCount() + 1);
+        try {
         postRepository.save(post);
         
-        // Notify post owner
-        if (!post.getUser().equals(currentUser)) {
-            notificationService.notifyComment(post.getUser(), currentUser, post);
+            // Notify post owner
+            if (!post.getUser().equals(currentUser)) {
+                notificationService.notifyComment(post.getUser(), currentUser, post);
+            }
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to add comment");
         }
     }
 
@@ -167,7 +173,24 @@ public class PostService {
             imageUrl = "/api/images/" + post.getImage().getName();
         }
 
-        User currentUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null) {
+            return PostResponse.builder()
+                .id(post.getId())
+                .content(post.getContent())
+                .imageUrl(imageUrl)
+                .timestamp(post.getTimestamp())
+                .user(PostResponse.UserSummary.builder()
+                        .id(post.getUser().getId())
+                        .username(post.getUser().getUsername())
+                        .build())
+                .likesCount(post.getLikes().size())
+                .commentsCount(post.getCommentsCount())
+                .shareCount(post.getShareCount())
+                .isLiked(false)
+                .build();
+        }
+        User currentUser = (User) auth.getPrincipal();
 
         return PostResponse.builder()
                 .id(post.getId())

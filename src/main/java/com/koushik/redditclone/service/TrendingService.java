@@ -14,6 +14,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.koushik.redditclone.model.Post;
 import com.koushik.redditclone.repository.PostRepository;
@@ -29,6 +30,7 @@ public class TrendingService {
     private final Map<String, Double> trendingHashtags = new ConcurrentHashMap<>();
     
     @Scheduled(fixedRate = 3600000) // Run every hour
+    @Transactional(readOnly = true)
     public void calculateTrends() {
         LocalDateTime twentyFourHoursAgo = LocalDateTime.now().minus(24, ChronoUnit.HOURS);
         PageRequest pageRequest = PageRequest.of(0, 100, Sort.by("timestamp").descending());

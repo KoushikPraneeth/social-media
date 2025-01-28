@@ -51,7 +51,7 @@ public class PostController {
             @PathVariable Long postId,
             @RequestBody CommentRequest request,
             @AuthenticationPrincipal User currentUser) {
-        postService.addComment(postId, request.getContent(), currentUser);
+        postService.addComment(postId, request, currentUser);
         return ResponseEntity.ok().build();
     }
 
@@ -67,23 +67,35 @@ public class PostController {
     public ResponseEntity<?> likePost(
             @PathVariable Long postId,
             @AuthenticationPrincipal User currentUser) {
-        postService.likePost(postId, currentUser);
-        return ResponseEntity.ok().build();
+        try {
+            postService.likePost(postId, currentUser);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
     }
 
     @DeleteMapping("/{postId}/like")
     public ResponseEntity<?> unlikePost(
             @PathVariable Long postId,
             @AuthenticationPrincipal User currentUser) {
-        postService.unlikePost(postId, currentUser);
-        return ResponseEntity.ok().build();
+        try {
+            postService.unlikePost(postId, currentUser);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
     }
 
     @PostMapping("/{postId}/share")
     public ResponseEntity<?> sharePost(
             @PathVariable Long postId,
             @AuthenticationPrincipal User currentUser) {
-        postService.sharePost(postId, currentUser);
-        return ResponseEntity.ok().build();
+        try {
+            postService.sharePost(postId, currentUser);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
     }
 }

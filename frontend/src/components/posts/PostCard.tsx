@@ -22,7 +22,7 @@ export function PostCard({ post, onLike, onComment, onShare }: PostCardProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [isShareModalOpen, setIsShareModalOpen] = useState(false)
   const [areCommentsVisible, setAreCommentsVisible] = useState(false)
-
+  const [forceUpdate, setForceUpdate] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -52,10 +52,8 @@ export function PostCard({ post, onLike, onComment, onShare }: PostCardProps) {
     if (commentContent.trim() && onComment) {
       try {
         console.log('Adding comment:', commentContent)
-        await onComment(post.id, commentContent)
-        const newComment = await posts.addComment(post.id, commentContent)
-        console.log('Comment added:', newComment.data)
-        setComments(prev => [newComment.data, ...prev])
+        await posts.addComment(post.id, commentContent)
+        await loadComments() // Refresh comments
         setCommentContent('')
         setIsCommenting(false)
         // Ensure comments section remains visible after posting
@@ -70,8 +68,12 @@ export function PostCard({ post, onLike, onComment, onShare }: PostCardProps) {
   const handleShare = async () => {
     try {
       console.log('Sharing post:', post.id)
-      await onShare?.(post.id)
+      await posts.share(post.id)
       setIsShareModalOpen(true)
+      // Manually increment share count since we don't fetch the post again
+      post.shareCount = (post.shareCount || 0) + 1
+      // Force a re-render
+      setForceUpdate(prev => !prev)
     } catch (error) {
       console.error('Failed to share post:', error)
       setError('Failed to share post. Please try again.')
