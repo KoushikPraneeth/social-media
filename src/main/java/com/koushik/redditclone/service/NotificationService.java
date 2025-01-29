@@ -1,51 +1,65 @@
 package com.koushik.redditclone.service;
 
-import com.koushik.redditclone.model.Notification;
-import com.koushik.redditclone.model.Notification.NotificationType;
-import com.koushik.redditclone.model.User;
-import com.koushik.redditclone.model.Post;
 import lombok.RequiredArgsConstructor;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
+
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.koushik.redditclone.model.Notification;
+import com.koushik.redditclone.model.Post;
+import com.koushik.redditclone.model.User;
+import com.koushik.redditclone.repository.NotificationRepository;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class NotificationService {
-    private final SimpMessagingTemplate messagingTemplate;
+    private final NotificationRepository notificationRepository;
 
-    public void sendNotification(Long userId, String message, NotificationType type) {
+    @Transactional
+    public void notifyLike(User recipient, User sender, Post post) {
         Notification notification = Notification.builder()
-                .type(type)
-                .message(message)
-                .userId(userId)
+                .recipient(recipient)
+                .sender(sender)
+                .content(String.format("%s liked your post", sender.getUsername()))
+                .type("LIKE")
+                .post(post)
                 .build();
-
-        // Send to user-specific topic channel
-        messagingTemplate.convertAndSend("/topic/user/" + userId, notification);
+        notificationRepository.save(notification);
     }
 
-    public void notifyNewFollower(Long followedUserId, String followerUsername) {
-        String message = followerUsername + " started following you";
-        sendNotification(followedUserId, message, NotificationType.NEW_FOLLOWER);
+    @Transactional
+    public void notifyComment(User recipient, User sender, Post post) {
+        Notification notification = Notification.builder()
+                .recipient(recipient)
+                .sender(sender)
+                .content(String.format("%s commented on your post", sender.getUsername()))
+                .type("COMMENT")
+                .post(post)
+                .build();
+        notificationRepository.save(notification);
     }
 
-    public void notifyNewPost(Long followerId, String posterUsername) {
-        String message = posterUsername + " created a new post";
-        sendNotification(followerId, message, NotificationType.NEW_POST);
+    @Transactional
+    public void notifyShare(User recipient, User sender, Post post) {
+        Notification notification = Notification.builder()
+                .recipient(recipient)
+                .sender(sender)
+                .content(String.format("%s shared your post", sender.getUsername()))
+                .type("SHARE")
+                .post(post)
+                .build();
+        notificationRepository.save(notification);
     }
 
-    public void notifyComment(User postOwner, User commenter, Post post) {
-        String message = commenter.getUsername() + " commented on your post";
-        sendNotification(postOwner.getId(), message, NotificationType.COMMENT);
-    }
-
-    public void notifyLike(User postOwner, User liker, Post post) {
-        String message = liker.getUsername() + " liked your post";
-        sendNotification(postOwner.getId(), message, NotificationType.LIKE);
-    }
-
-    public void notifyShare(User postOwner, User sharer, Post post) {
-        String message = sharer.getUsername() + " shared your post";
-        sendNotification(postOwner.getId(), message, NotificationType.SHARE);
+    @Transactional
+    public void notifyNewFollower(User recipient, User sender) {
+        Notification notification = Notification.builder()
+                .recipient(recipient)
+                .sender(sender)
+                .content(String.format("%s started following you", sender.getUsername()))
+                .type("FOLLOW")
+                .build();
+        notificationRepository.save(notification);
     }
 }

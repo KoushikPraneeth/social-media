@@ -6,6 +6,7 @@ import {
   CopyIcon,
   XIcon
 } from 'lucide-react'
+import { posts } from '../../lib/api'
 import { Button } from '../ui/button'
 
 interface ShareModalProps {
@@ -23,7 +24,8 @@ export function ShareModal({ postId, isOpen, onClose }: ShareModalProps) {
     {
       name: 'Copy Link',
       icon: CopyIcon,
-      onClick: () => {
+      onClick: async () => {
+        await posts.share(postId)
         navigator.clipboard.writeText(postUrl)
         onClose()
       }
@@ -31,7 +33,8 @@ export function ShareModal({ postId, isOpen, onClose }: ShareModalProps) {
     {
       name: 'Twitter',
       icon: TwitterIcon,
-      onClick: () => {
+      onClick: async () => {
+        await posts.share(postId)
         window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(postUrl)}`, '_blank')
         onClose()
       }
@@ -39,7 +42,8 @@ export function ShareModal({ postId, isOpen, onClose }: ShareModalProps) {
     {
       name: 'Facebook',
       icon: FacebookIcon,
-      onClick: () => {
+      onClick: async () => {
+        await posts.share(postId)
         window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(postUrl)}`, '_blank')
         onClose()
       }
@@ -47,7 +51,8 @@ export function ShareModal({ postId, isOpen, onClose }: ShareModalProps) {
     {
       name: 'LinkedIn',
       icon: LinkedinIcon,
-      onClick: () => {
+      onClick: async () => {
+        await posts.share(postId)
         window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(postUrl)}`, '_blank')
         onClose()
       }
