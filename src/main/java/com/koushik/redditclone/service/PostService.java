@@ -126,21 +126,37 @@ public class PostService {
     }
   }
 
+  @Transactional(readOnly = true)
   public PageResponse<CommentResponse> getComments(Long postId, int page, int size) {
-    PageRequest pageRequest = PageRequest.of(page, size, Sort.by("timestamp").descending());
-    Page<Comment> commentPage = commentRepository.findByPostId(postId, pageRequest);
+    // Adjust for 0-based page index
+    int pageIndex = Math.max(0, page - 1);
+    PageRequest pageRequest = PageRequest.of(pageIndex, size);
+    
+    // Load comments with relationships
+    Page<Comment> commentPage = commentRepository.findByPostIdOrderByTimestampDesc(postId, pageRequest);
+
+    // Debug log the results
+    System.out.println("Found " + commentPage.getTotalElements() + " total comments for post " + postId);
+    System.out.println("Current page has " + commentPage.getNumberOfElements() + " comments");
 
     List<CommentResponse> comments = commentPage.getContent().stream()
-        .map(comment -> CommentResponse.builder()
-            .id(comment.getId())
-            .content(comment.getContent())
-            .timestamp(comment.getTimestamp())
-            .user(CommentResponse.UserSummary.builder()
-                .id(comment.getUser().getId())
-                .username(comment.getUser().getUsername())
-                .build())
-            .build())
+        .map(comment -> {
+            // Debug log each comment
+            System.out.println("Mapping comment: id=" + comment.getId() + ", content=" + comment.getContent());
+            return CommentResponse.builder()
+                .id(comment.getId())
+                .content(comment.getContent())
+                .timestamp(comment.getTimestamp())
+                .user(CommentResponse.UserSummary.builder()
+                    .id(comment.getUser().getId())
+                    .username(comment.getUser().getUsername())
+                    .build())
+                .build();
+        })
         .collect(Collectors.toList());
+
+    // Debug log the final response
+    System.out.println("Returning " + comments.size() + " mapped comments");
 
     return PageResponse.<CommentResponse>builder()
         .data(comments)

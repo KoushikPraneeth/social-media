@@ -36,9 +36,15 @@ export function PostCard({ post, onLike, onComment, onShare }: PostCardProps) {
       console.log('Loading comments for post:', post.id)
       setIsLoading(true)
       setError(null)
-      const response = await posts.getComments(post.id)
-      console.log('Comments loaded:', response.data.data)
-      setComments(response.data.data)
+      const response = await posts.getComments(post.id, 0, 10) // Start from page 0
+      console.log('Comments API response:', response)
+      if (response.data && Array.isArray(response.data.data)) {
+        console.log('Comments loaded:', response.data.data)
+        setComments(response.data.data)
+      } else {
+        console.error('Invalid response format:', response)
+        setError('Invalid response format from server')
+      }
     } catch (error) {
       console.error('Failed to load comments:', error)
       setError('Failed to load comments. Please try again.')
