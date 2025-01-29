@@ -22,12 +22,18 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
+import lombok.EqualsAndHashCode;
 
 @Entity
 @Table(name = "posts")
-@Data
+@Getter
+@Setter
+@ToString(exclude = {"user", "likes"})
+@EqualsAndHashCode(exclude = {"user", "likes"})
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor

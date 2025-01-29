@@ -1,12 +1,15 @@
 package com.koushik.redditclone.service;
 
 import com.koushik.redditclone.dto.CommentRequest;
+import com.koushik.redditclone.dto.CommentResponse;
 import com.koushik.redditclone.dto.CreatePostRequest;
 import com.koushik.redditclone.dto.PageResponse;
 import com.koushik.redditclone.dto.PostResponse;
+import com.koushik.redditclone.model.Comment;
 import com.koushik.redditclone.model.ImageData;
 import com.koushik.redditclone.model.Post;
 import com.koushik.redditclone.model.User;
+import com.koushik.redditclone.repository.CommentRepository;
 import com.koushik.redditclone.repository.PostRepository;
 import java.io.IOException;
 import java.util.List;
@@ -33,6 +36,7 @@ public class PostService {
   private final PostRepository postRepository;
   private final FileStorageService fileStorageService;
   private final NotificationService notificationService;
+  private final CommentRepository commentRepository;
 
   @Transactional
   public PostResponse createPost(CreatePostRequest request, User currentUser) throws IOException {
@@ -97,12 +101,17 @@ public class PostService {
   @Transactional
   public void addComment(Long postId, CommentRequest request, User currentUser) {
     try {
-      Post post =
-          postRepository
-              .findById(postId)
-              .orElseThrow(
-                  () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Post not found"));
+      Post post = postRepository
+          .findById(postId)
+          .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Post not found"));
 
+      Comment comment = Comment.builder()
+          .content(request.getContent())
+          .post(post)
+          .user(currentUser)
+          .build();
+
+      commentRepository.save(comment);
       post.setCommentsCount(post.getCommentsCount() + 1);
       Post savedPost = postRepository.save(post);
 
@@ -117,14 +126,28 @@ public class PostService {
     }
   }
 
-  public PageResponse<?> getComments(Long postId, int page, int size) {
-    // For now, return empty response since we don't store actual comments
-    return PageResponse.builder()
-        .data(List.of())
-        .total(0L)
+  public PageResponse<CommentResponse> getComments(Long postId, int page, int size) {
+    PageRequest pageRequest = PageRequest.of(page, size, Sort.by("timestamp").descending());
+    Page<Comment> commentPage = commentRepository.findByPostId(postId, pageRequest);
+
+    List<CommentResponse> comments = commentPage.getContent().stream()
+        .map(comment -> CommentResponse.builder()
+            .id(comment.getId())
+            .content(comment.getContent())
+            .timestamp(comment.getTimestamp())
+            .user(CommentResponse.UserSummary.builder()
+                .id(comment.getUser().getId())
+                .username(comment.getUser().getUsername())
+                .build())
+            .build())
+        .collect(Collectors.toList());
+
+    return PageResponse.<CommentResponse>builder()
+        .data(comments)
+        .total(commentPage.getTotalElements())
         .page(page)
         .limit(size)
-        .hasMore(false)
+        .hasMore(commentPage.hasNext())
         .build();
   }
 
