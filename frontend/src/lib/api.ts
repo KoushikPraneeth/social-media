@@ -65,6 +65,7 @@ export const posts = {
       },
     }),
   share: (postId: number) => api.post(`/api/posts/${postId}/share`),
+  delete: (postId: number) => api.delete(`/api/posts/${postId}`),
 };
 
 export const trends = {

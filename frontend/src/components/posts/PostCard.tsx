@@ -1,21 +1,24 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Heart, MessageCircle, Share2 } from 'lucide-react'
+import { Heart, MessageCircle, Share2, MoreHorizontal, Trash2 } from 'lucide-react'
 import { Button } from '../ui/button'
 import { Post, Comment } from '../../types'
 import { formatDate, getFullImageUrl } from '../../lib/utils'
 import { CommentsList } from './CommentsList'
 import { ShareModal } from './ShareModal'
 import { posts } from '../../lib/api'
+import { useAuth } from '../../contexts/auth/AuthContext'
+import { useToast } from '../../contexts/ToastContext'
 
 interface PostCardProps {
   post: Post
   onLike?: (postId: number) => void
   onComment?: (postId: number, content: string) => void
   onShare?: (postId: number) => void
+  onPostDelete?: () => void
 }
 
-export function PostCard({ post, onLike, onComment, onShare }: PostCardProps) {
+export function PostCard({ post, onLike, onComment, onShare, onPostDelete }: PostCardProps) {
   const [isCommenting, setIsCommenting] = useState(false)
   const [commentContent, setCommentContent] = useState('')
   const [comments, setComments] = useState<Comment[]>([])
@@ -23,6 +26,9 @@ export function PostCard({ post, onLike, onComment, onShare }: PostCardProps) {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false)
   const [areCommentsVisible, setAreCommentsVisible] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showMenu, setShowMenu] = useState(false)
+  const { isAuthenticated, username } = useAuth()
+  const { showToast } = useToast()
 
   useEffect(() => {
     console.log('areCommentsVisible changed:', areCommentsVisible)
@@ -84,6 +90,27 @@ export function PostCard({ post, onLike, onComment, onShare }: PostCardProps) {
     }
   }
 
+  const handleDelete = async () => {
+    try {
+      await posts.delete(post.id)
+      showToast({
+        title: "Success",
+        description: "Post deleted successfully",
+        type: "success"
+      })
+      if (onPostDelete) {
+        onPostDelete()
+      }
+    } catch (error) {
+      console.error('Failed to delete post:', error)
+      showToast({
+        title: "Error",
+        description: "Failed to delete post. Please try again.",
+        type: "error"
+      })
+    }
+  }
+
   const toggleComments = () => {
     console.log('Toggling comments visibility')
     setAreCommentsVisible(!areCommentsVisible)
@@ -113,6 +140,31 @@ export function PostCard({ post, onLike, onComment, onShare }: PostCardProps) {
               </p>
             </div>
           </div>
+          {isAuthenticated && post.user.username === username && (
+            <div className="relative">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowMenu(!showMenu)}
+                className="h-8 w-8 p-0"
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+              {showMenu && (
+                <div className="absolute right-0 mt-2 w-48 rounded-md border bg-card shadow-lg">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleDelete}
+                    className="flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
         <div className="mt-4 space-y-4">
           <p className="text-sm">{post.content}</p>

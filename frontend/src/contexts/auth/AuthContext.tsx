@@ -2,7 +2,8 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 import { auth } from '../../lib/api'
 
 interface AuthContextType {
-  user: null
+  username: string | null
+  userId: number | null
   isAuthenticated: boolean
   login: (username: string, password: string) => Promise<void>
   register: (username: string, email: string, password: string) => Promise<{ success: boolean; message: string }>
@@ -12,21 +13,30 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState(null)
+  const [username, setUsername] = useState<string | null>(null)
+  const [userId, setUserId] = useState<number | null>(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
 
   useEffect(() => {
     const token = localStorage.getItem('token')
-    if (token) {
+    const storedUsername = localStorage.getItem('username')
+    const storedUserId = localStorage.getItem('userId')
+    if (token && storedUsername && storedUserId) {
       setIsAuthenticated(true)
+      setUsername(storedUsername)
+      setUserId(parseInt(storedUserId))
     }
   }, [])
 
   const login = async (username: string, password: string) => {
     try {
       const response = await auth.login(username, password)
-      if (response.data && response.data.token) {
+      if (response.data && response.data.token && response.data.user) {
         localStorage.setItem('token', response.data.token)
+        localStorage.setItem('username', response.data.user.username)
+        localStorage.setItem('userId', response.data.user.id.toString())
+        setUsername(response.data.user.username)
+        setUserId(response.data.user.id)
         setIsAuthenticated(true)
       } else {
         throw new Error('No token received from server')
@@ -50,12 +60,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     localStorage.removeItem('token')
-    setUser(null)
+    localStorage.removeItem('username')
+    localStorage.removeItem('userId')
+    setUsername(null)
+    setUserId(null)
     setIsAuthenticated(false)
   }
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, login, register, logout }}>
+    <AuthContext.Provider value={{ username, userId, isAuthenticated, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   )
