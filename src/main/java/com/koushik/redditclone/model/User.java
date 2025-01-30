@@ -12,12 +12,14 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -31,8 +33,8 @@ import lombok.EqualsAndHashCode;
 @Table(name = "users")
 @Getter
 @Setter
-@ToString(exclude = {"followers", "following"})
-@EqualsAndHashCode(exclude = {"followers", "following"})
+@ToString(exclude = {"followers", "following", "posts"})
+@EqualsAndHashCode(exclude = {"followers", "following", "posts"})
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -66,6 +68,10 @@ public class User implements UserDetails {
     @Builder.Default
     @ManyToMany(mappedBy = "followers")
     private Set<User> following = new HashSet<>();
+
+    @Builder.Default
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    private Set<Post> posts = new HashSet<>();
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

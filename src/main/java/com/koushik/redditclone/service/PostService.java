@@ -86,12 +86,18 @@ public class PostService {
 
   public PageResponse<PostResponse> getUserPosts(String username, int page, int size) {
     try {
+      System.out.println("Getting posts for username: " + username + ", page: " + page);
       User user = userService.getUserByUsername(username);
+      System.out.println("Found user with ID: " + user.getId());
+
       PageRequest pageRequest = PageRequest.of(page, size, Sort.by("timestamp").descending());
       Page<Post> postPage = postRepository.findByUserId(user.getId(), pageRequest);
+      System.out.println("Found " + postPage.getTotalElements() + " total posts");
+      System.out.println("Current page has " + postPage.getContent().size() + " posts");
 
       List<PostResponse> posts =
           postPage.getContent().stream().map(this::mapToPostResponse).collect(Collectors.toList());
+      System.out.println("Mapped " + posts.size() + " posts to response");
 
       return PageResponse.<PostResponse>builder()
           .data(posts)

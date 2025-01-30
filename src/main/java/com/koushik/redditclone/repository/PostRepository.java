@@ -8,12 +8,12 @@ import com.koushik.redditclone.model.Post;
 import java.time.LocalDateTime;
 
 public interface PostRepository extends JpaRepository<Post, Long> {
-    @Query("SELECT p FROM Post p LEFT JOIN FETCH p.user WHERE p.user.id = :userId")
+    @Query(value = "SELECT DISTINCT p FROM Post p LEFT JOIN FETCH p.user WHERE p.user.id = :userId ORDER BY p.timestamp DESC")
     Page<Post> findByUserId(Long userId, Pageable pageable);
 
-    @Query("SELECT p FROM Post p LEFT JOIN FETCH p.user")
+    @Query(value = "SELECT DISTINCT p FROM Post p LEFT JOIN FETCH p.user ORDER BY p.timestamp DESC")
     Page<Post> findAllWithUser(Pageable pageable);
 
-    @Query("SELECT p FROM Post p LEFT JOIN FETCH p.user WHERE p.timestamp > :timestamp")
+    @Query(value = "SELECT DISTINCT p FROM Post p LEFT JOIN FETCH p.user WHERE p.timestamp > :timestamp ORDER BY p.timestamp DESC")
     Page<Post> findByTimestampAfter(LocalDateTime timestamp, Pageable pageable);
 }

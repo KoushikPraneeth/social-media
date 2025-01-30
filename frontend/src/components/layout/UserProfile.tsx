@@ -1,101 +1,107 @@
-import React, { useState, useEffect } from 'react'
-import { useParams } from 'react-router-dom'
-import { Loader2, UserCircle2 } from 'lucide-react'
-import { Button } from '../ui/button'
-import { PostCard } from '../posts/PostCard'
-import { User, Post } from '../../types'
-import { posts, users } from '../../lib/api'
-import { useToast } from '../../contexts/ToastContext'
+import React, { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
+import { Loader2, UserCircle2 } from "lucide-react";
+import { Button } from "../ui/button";
+import { PostCard } from "../posts/PostCard";
+import { User, Post } from "../../types";
+import { posts, users } from "../../lib/api";
+import { useToast } from "../../contexts/ToastContext";
 
 export function UserProfile() {
-  const { username } = useParams<{ username: string }>()
-  const [user, setUser] = useState<User | null>(null)
-  const [userPosts, setUserPosts] = useState<Post[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [page, setPage] = useState(1)
-  const [hasMore, setHasMore] = useState(true)
-  const { showToast } = useToast()
+  const { username } = useParams<{ username: string }>();
+  const [user, setUser] = useState<User | null>(null);
+  const [userPosts, setUserPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const { showToast } = useToast();
 
   const fetchUserData = async () => {
-    if (!username) return
-    setLoading(true)
-    setError(null)
+    if (!username) return;
+    setLoading(true);
+    setError(null);
 
     try {
       // Fetch user details
-      const userResponse = await users.getById(username)
-      setUser(userResponse.data.data)
+      const userResponse = await users.getById(username);
+      setUser(userResponse.data.data);
 
       // Fetch initial posts
-      await fetchUserPosts(1)
+      await fetchUserPosts(1);
     } catch (err: any) {
-      const errorMessage = err.message || 'Failed to fetch user data'
-      setError(errorMessage)
+      const errorMessage = err.message || "Failed to fetch user data";
+      setError(errorMessage);
       showToast({
-        title: 'Error',
+        title: "Error",
         description: errorMessage,
-        type: 'error',
-      })
+        type: "error",
+      });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const fetchUserPosts = async (pageNum: number) => {
-    if (!username) return
+    if (!username) return;
+    console.log("Fetching posts for username:", username, "page:", pageNum);
 
     try {
-      const { data } = await posts.getUserPosts(username, pageNum)
+      const response = await posts.getUserPosts(username, pageNum);
+      console.log("Posts API response:", response.data);
+
       if (pageNum === 1) {
-        setUserPosts(data.data)
+        setUserPosts(response.data.data);
       } else {
-        setUserPosts(prev => [...prev, ...data.data])
+        setUserPosts((prev) => [...prev, ...response.data.data]);
       }
-      setHasMore(data.hasMore)
+      setHasMore(response.data.hasMore);
     } catch (err: any) {
+      console.error("Error fetching posts:", err);
       showToast({
-        title: 'Error',
-        description: 'Failed to fetch posts',
-        type: 'error',
-      })
+        title: "Error",
+        description: err.message || "Failed to fetch posts",
+        type: "error",
+      });
     }
-  }
+  };
 
   useEffect(() => {
-    fetchUserData()
-  }, [username])
+    fetchUserData();
+  }, [username]);
 
   const handleFollow = async () => {
-    if (!user || !username) return
+    if (!user || !username) return;
     try {
       if (user.isFollowing) {
-        await users.unfollow(username)
+        await users.unfollow(username);
       } else {
-        await users.follow(username)
+        await users.follow(username);
       }
-      setUser(prev => prev ? { ...prev, isFollowing: !prev.isFollowing } : null)
+      setUser((prev) =>
+        prev ? { ...prev, isFollowing: !prev.isFollowing } : null
+      );
     } catch (err: any) {
       showToast({
-        title: 'Error',
-        description: 'Failed to update follow status',
-        type: 'error',
-      })
+        title: "Error",
+        description: "Failed to update follow status",
+        type: "error",
+      });
     }
-  }
+  };
 
   const loadMore = () => {
-    const nextPage = page + 1
-    setPage(nextPage)
-    fetchUserPosts(nextPage)
-  }
+    const nextPage = page + 1;
+    setPage(nextPage);
+    fetchUserPosts(nextPage);
+  };
 
   if (loading && page === 1) {
     return (
       <div className="flex items-center justify-center min-h-[200px]">
         <Loader2 className="h-8 w-8 animate-spin" />
       </div>
-    )
+    );
   }
 
   if (error) {
@@ -103,7 +109,7 @@ export function UserProfile() {
       <div className="flex items-center justify-center min-h-[200px]">
         <p className="text-red-500">{error}</p>
       </div>
-    )
+    );
   }
 
   return (
@@ -132,7 +138,7 @@ export function UserProfile() {
               variant={user.isFollowing ? "outline" : "default"}
               onClick={handleFollow}
             >
-              {user.isFollowing ? 'Unfollow' : 'Follow'}
+              {user.isFollowing ? "Unfollow" : "Follow"}
             </Button>
           )}
         </div>
@@ -147,23 +153,19 @@ export function UserProfile() {
         )}
         {hasMore && (
           <div className="flex justify-center">
-            <Button
-              variant="outline"
-              onClick={loadMore}
-              disabled={loading}
-            >
+            <Button variant="outline" onClick={loadMore} disabled={loading}>
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Loading...
                 </>
               ) : (
-                'Load More'
+                "Load More"
               )}
             </Button>
           </div>
         )}
       </div>
     </div>
-  )
+  );
 }
