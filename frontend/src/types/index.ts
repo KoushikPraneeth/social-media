@@ -6,6 +6,7 @@ export interface User {
   followersCount?: number
   followingCount?: number
   isFollowing?: boolean
+  profileUrl?: string
 }
 
 export interface Post {

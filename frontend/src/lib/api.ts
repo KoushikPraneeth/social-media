@@ -40,8 +40,8 @@ export const posts = {
         'Content-Type': 'multipart/form-data',
       },
     }),
-  getUserPosts: (userId: number, page = 0, limit = 10) => 
-    api.get<PaginatedResponse<any>>(`/api/posts/user/${userId}`, { params: { page, limit } }),
+  getUserPosts: (username: string, page = 0, limit = 10) => 
+    api.get<PaginatedResponse<any>>(`/api/posts/user/${username}`, { params: { page, limit } }),
   getHashtagPosts: (tag: string, page = 0, limit = 10) =>
     api.get<PaginatedResponse<any>>(`/api/posts/hashtag/${tag}`, { params: { page, limit } }),
   like: (postId: number) => api.post(`/api/posts/${postId}/like`),
@@ -65,14 +65,14 @@ export const trends = {
 }
 
 export const users = {
-  getById: (userId: number) => api.get(`/api/users/${userId}`),
+  getById: (username: string) => api.get(`/api/users/${username}`),
   getProfile: () => api.get('/api/users/me'),
-  follow: (userId: number) => api.post(`/api/users/${userId}/follow`),
-  unfollow: (userId: number) => api.post(`/api/users/${userId}/unfollow`),
-  getFollowers: (userId: number, page = 0, limit = 10) =>
-    api.get(`/api/users/${userId}/followers`, { params: { page, limit } }),
-  getFollowing: (userId: number, page = 0, limit = 10) =>
-    api.get(`/api/users/${userId}/following`, { params: { page, limit } }),
+  follow: (username: string) => api.post(`/api/users/${username}/follow`),
+  unfollow: (username: string) => api.post(`/api/users/${username}/unfollow`),
+  getFollowers: (username: string, page = 0, limit = 10) =>
+    api.get(`/api/users/${username}/followers`, { params: { page, limit } }),
+  getFollowing: (username: string, page = 0, limit = 10) =>
+    api.get(`/api/users/${username}/following`, { params: { page, limit } }),
   updateProfile: (data: FormData) =>
     api.put('/api/users/me', data, {
       headers: {

@@ -103,7 +103,7 @@ export function PostCard({ post, onLike, onComment, onShare }: PostCardProps) {
             <div className="h-10 w-10 rounded-full bg-muted" />
             <div>
               <Link 
-                to={`/user/${post.user.id}`}
+                to={post.user.profileUrl || `/user/${post.user.id}`}
                 className="text-sm font-semibold hover:underline"
               >
                 {post.user.username}

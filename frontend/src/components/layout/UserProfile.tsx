@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { Loader2, UserCircle2 } from 'lucide-react'
 import { Button } from '../ui/button'
@@ -8,7 +8,7 @@ import { posts, users } from '../../lib/api'
 import { useToast } from '../../contexts/ToastContext'
 
 export function UserProfile() {
-  const { userId } = useParams<{ userId: string }>()
+  const { username } = useParams<{ username: string }>()
   const [user, setUser] = useState<User | null>(null)
   const [userPosts, setUserPosts] = useState<Post[]>([])
   const [loading, setLoading] = useState(true)
@@ -18,13 +18,13 @@ export function UserProfile() {
   const { showToast } = useToast()
 
   const fetchUserData = async () => {
-    if (!userId) return
+    if (!username) return
     setLoading(true)
     setError(null)
 
     try {
       // Fetch user details
-      const userResponse = await users.getById(parseInt(userId))
+      const userResponse = await users.getById(username)
       setUser(userResponse.data.data)
 
       // Fetch initial posts
@@ -43,10 +43,10 @@ export function UserProfile() {
   }
 
   const fetchUserPosts = async (pageNum: number) => {
-    if (!userId) return
+    if (!username) return
 
     try {
-      const { data } = await posts.getUserPosts(parseInt(userId), pageNum)
+      const { data } = await posts.getUserPosts(username, pageNum)
       if (pageNum === 1) {
         setUserPosts(data.data)
       } else {
@@ -64,15 +64,15 @@ export function UserProfile() {
 
   useEffect(() => {
     fetchUserData()
-  }, [userId])
+  }, [username])
 
   const handleFollow = async () => {
-    if (!user) return
+    if (!user || !username) return
     try {
       if (user.isFollowing) {
-        await users.unfollow(user.id)
+        await users.unfollow(username)
       } else {
-        await users.follow(user.id)
+        await users.follow(username)
       }
       setUser(prev => prev ? { ...prev, isFollowing: !prev.isFollowing } : null)
     } catch (err: any) {
@@ -127,7 +127,7 @@ export function UserProfile() {
               </div>
             </div>
           </div>
-          {user && user.id !== parseInt(userId!) && (
+          {user && username !== user.username && (
             <Button
               variant={user.isFollowing ? "outline" : "default"}
               onClick={handleFollow}

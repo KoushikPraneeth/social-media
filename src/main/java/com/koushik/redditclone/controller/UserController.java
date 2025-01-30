@@ -23,9 +23,9 @@ public class UserController {
 
     private final UserService userService;
 
-    @GetMapping("/{userId}")
-    public ResponseEntity<UserResponse> getUserProfile(@PathVariable Long userId) {
-        return ResponseEntity.ok(userService.getUserProfile(userId));
+    @GetMapping("/{username}")
+    public ResponseEntity<UserResponse> getUserProfile(@PathVariable String username) {
+        return ResponseEntity.ok(userService.getUserProfile(username));
     }
 
     @PostMapping("/{userId}/follow")

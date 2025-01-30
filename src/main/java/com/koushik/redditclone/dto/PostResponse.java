@@ -29,5 +29,6 @@ public class PostResponse {
     public static class UserSummary {
         private Long id;
         private String username;
+        private String profileUrl; // New field for the profile URL
     }
 }

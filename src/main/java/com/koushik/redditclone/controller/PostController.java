@@ -38,12 +38,12 @@ public class PostController {
         return ResponseEntity.ok(postService.getAllPosts(page, size));
     }
 
-    @GetMapping("/user/{userId}")
+    @GetMapping("/user/{username}")
     public ResponseEntity<PageResponse<PostResponse>> getUserPosts(
-            @PathVariable Long userId,
+            @PathVariable String username,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.ok(postService.getUserPosts(userId, page, size));
+        return ResponseEntity.ok(postService.getUserPosts(username, page, size));
     }
 
     @PostMapping("/{postId}/comments")

@@ -22,8 +22,8 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final NotificationService notificationService;
 
-    public UserResponse getUserProfile(Long userId) {
-        User user = userRepository.findById(userId)
+    public UserResponse getUserProfile(String username) {
+        User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
         return UserResponse.builder()

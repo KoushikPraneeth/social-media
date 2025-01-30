@@ -23,6 +23,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -37,6 +38,7 @@ public class PostService {
   private final FileStorageService fileStorageService;
   private final NotificationService notificationService;
   private final CommentRepository commentRepository;
+  private final UserService userService;
 
   @Transactional
   public PostResponse createPost(CreatePostRequest request, User currentUser) throws IOException {
@@ -68,7 +70,7 @@ public class PostService {
 
   public PageResponse<PostResponse> getAllPosts(int page, int size) {
     PageRequest pageRequest = PageRequest.of(page, size, Sort.by("timestamp").descending());
-    Page<Post> postPage = postRepository.findAll(pageRequest);
+    Page<Post> postPage = postRepository.findAllWithUser(pageRequest);
 
     List<PostResponse> posts =
         postPage.getContent().stream().map(this::mapToPostResponse).collect(Collectors.toList());
@@ -82,20 +84,27 @@ public class PostService {
         .build();
   }
 
-  public PageResponse<PostResponse> getUserPosts(Long userId, int page, int size) {
-    PageRequest pageRequest = PageRequest.of(page, size, Sort.by("timestamp").descending());
-    Page<Post> postPage = postRepository.findByUserId(userId, pageRequest);
+  public PageResponse<PostResponse> getUserPosts(String username, int page, int size) {
+    try {
+      User user = userService.getUserByUsername(username);
+      PageRequest pageRequest = PageRequest.of(page, size, Sort.by("timestamp").descending());
+      Page<Post> postPage = postRepository.findByUserId(user.getId(), pageRequest);
 
-    List<PostResponse> posts =
-        postPage.getContent().stream().map(this::mapToPostResponse).collect(Collectors.toList());
+      List<PostResponse> posts =
+          postPage.getContent().stream().map(this::mapToPostResponse).collect(Collectors.toList());
 
-    return PageResponse.<PostResponse>builder()
-        .data(posts)
-        .total(postPage.getTotalElements())
-        .page(page)
-        .limit(size)
-        .hasMore(postPage.hasNext())
-        .build();
+      return PageResponse.<PostResponse>builder()
+          .data(posts)
+          .total(postPage.getTotalElements())
+          .page(page)
+          .limit(size)
+          .hasMore(postPage.hasNext())
+          .build();
+    } catch (UsernameNotFoundException e) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
+    } catch (Exception e) {
+      throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error fetching user posts");
+    }
   }
 
   @Transactional
@@ -135,14 +144,8 @@ public class PostService {
     // Load comments with relationships
     Page<Comment> commentPage = commentRepository.findByPostIdOrderByTimestampDesc(postId, pageRequest);
 
-    // Debug log the results
-    System.out.println("Found " + commentPage.getTotalElements() + " total comments for post " + postId);
-    System.out.println("Current page has " + commentPage.getNumberOfElements() + " comments");
-
     List<CommentResponse> comments = commentPage.getContent().stream()
         .map(comment -> {
-            // Debug log each comment
-            System.out.println("Mapping comment: id=" + comment.getId() + ", content=" + comment.getContent());
             return CommentResponse.builder()
                 .id(comment.getId())
                 .content(comment.getContent())
@@ -154,9 +157,6 @@ public class PostService {
                 .build();
         })
         .collect(Collectors.toList());
-
-    // Debug log the final response
-    System.out.println("Returning " + comments.size() + " mapped comments");
 
     return PageResponse.<CommentResponse>builder()
         .data(comments)
@@ -241,6 +241,7 @@ public class PostService {
               PostResponse.UserSummary.builder()
                   .id(post.getUser().getId())
                   .username(post.getUser().getUsername())
+                  .profileUrl("/user/" + post.getUser().getUsername())
                   .build())
           .likesCount(post.getLikes().size())
           .commentsCount(post.getCommentsCount())
@@ -259,6 +260,7 @@ public class PostService {
             PostResponse.UserSummary.builder()
                 .id(post.getUser().getId())
                 .username(post.getUser().getUsername())
+                .profileUrl("/user/" + post.getUser().getUsername())
                 .build())
         .likesCount(post.getLikes().size())
         .commentsCount(post.getCommentsCount())

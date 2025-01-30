@@ -1,3 +1,4 @@
+import React from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './contexts/auth/AuthContext'
 import { ThemeProvider } from './providers/theme-provider'
@@ -48,7 +49,7 @@ function App() {
                     </MainLayout>
                   </ProtectedRoute>
                 } />
-                <Route path="/user/:userId" element={
+                <Route path="/user/:username" element={
                   <ProtectedRoute>
                     <MainLayout>
                       <UserProfile />
