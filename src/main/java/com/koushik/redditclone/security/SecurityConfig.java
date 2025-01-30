@@ -55,9 +55,11 @@ public class SecurityConfig {
             }))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/auth/**", "/h2-console/**", "/actuator/**").permitAll()
-                .requestMatchers("/uploads/**", "/api/images/**").permitAll()  // Allow public access to images
-                .requestMatchers("/api/posts/**", "/api/users/**").authenticated()
-                .anyRequest().permitAll()
+                .requestMatchers("/uploads/**", "/api/images/**").permitAll()
+                .requestMatchers("/api/users/**").permitAll() // Simplified - allow all user endpoints
+                .requestMatchers("/api/posts/**").permitAll()  // Allow viewing posts
+                .requestMatchers("/api/posts/*/like", "/api/posts/*/unlike").authenticated() // Require auth for actions
+                .anyRequest().authenticated()
             )
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Optional;
 
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import com.koushik.redditclone.dto.UserResponse;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +21,19 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final NotificationService notificationService;
+
+    public UserResponse getUserProfile(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        return UserResponse.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .followersCount(user.getFollowers().size())
+                .followingCount(user.getFollowing().size())
+                .isFollowing(false) // Default to false for public view
+                .build();
+    }
 
     @Transactional
     public User createUser(String username, String email, String password) {
