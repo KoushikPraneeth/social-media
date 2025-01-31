@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Heart, MessageCircle, Share2, MoreHorizontal, Trash2 } from 'lucide-react'
+import { Heart, MessageCircle, Share2, MoreHorizontal, Trash2, Loader2 } from 'lucide-react'
 import { Button } from '../ui/button'
 import { Post, Comment } from '../../types'
 import { formatDate, getFullImageUrl } from '../../lib/utils'
@@ -12,23 +12,29 @@ import { useToast } from '../../contexts/ToastContext'
 
 interface PostCardProps {
   post: Post
-  onLike?: (postId: number) => void
   onComment?: (postId: number, content: string) => void
   onShare?: (postId: number) => void
   onPostDelete?: () => void
 }
 
-export function PostCard({ post, onLike, onComment, onShare, onPostDelete }: PostCardProps) {
+export function PostCard({ post, onComment, onShare, onPostDelete }: PostCardProps) {
   const [isCommenting, setIsCommenting] = useState(false)
   const [commentContent, setCommentContent] = useState('')
   const [comments, setComments] = useState<Comment[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false)
   const [isShareModalOpen, setIsShareModalOpen] = useState(false)
   const [areCommentsVisible, setAreCommentsVisible] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showMenu, setShowMenu] = useState(false)
+  const [localPost, setLocalPost] = useState<Post>(post)
   const { isAuthenticated, username } = useAuth()
   const { showToast } = useToast()
+
+  // Update localPost when post prop changes
+  useEffect(() => {
+    setLocalPost(post);
+  }, [post]);
 
   useEffect(() => {
     console.log('areCommentsVisible changed:', areCommentsVisible)
@@ -60,29 +66,85 @@ export function PostCard({ post, onLike, onComment, onShare, onPostDelete }: Pos
   }
 
   const handleCommentSubmit = async () => {
-    if (commentContent.trim() && onComment) {
-      try {
-        console.log('Adding comment:', commentContent)
-        await posts.addComment(post.id, commentContent)
-        await loadComments() // Refresh comments
-        setCommentContent('')
-        setIsCommenting(false)
-        // Ensure comments section remains visible after posting
-        setAreCommentsVisible(true)
-      } catch (error) {
-        console.error('Failed to add comment:', error)
-        setError('Failed to add comment. Please try again.')
-      }
+    if (!commentContent.trim() || !username || !isAuthenticated) return;
+
+    setIsSubmittingComment(true);
+    const originalPost = localPost;
+    const now = new Date().toISOString();
+    const tempComment: Comment = {
+      id: Date.now(), // Temporary ID
+      content: commentContent,
+      createdAt: now,
+      user: {
+        id: 0, // Temporary ID
+        username,
+        email: '', // Will be updated with real data on refresh
+        createdAt: now,
+        profileUrl: `/user/${username}`
+      },
+      postId: localPost.id
+    };
+
+    try {
+      // Optimistically update UI
+      setComments(prev => [tempComment, ...prev]);
+      setLocalPost(prev => ({
+        ...prev,
+        commentsCount: (prev.commentsCount || 0) + 1
+      }));
+      
+      // Make API call
+      await posts.addComment(localPost.id, commentContent);
+      
+      // Clear input and update UI state
+      setCommentContent('');
+      setIsCommenting(false);
+      setAreCommentsVisible(true);
+      
+      // Refresh comments to get server-generated IDs
+      await loadComments();
+    } catch (err) {
+      console.error('Failed to add comment:', err);
+      // Revert optimistic updates
+      setComments(prev => prev.filter(c => c.id !== tempComment.id));
+      setLocalPost(originalPost);
+      setError('Failed to add comment. Please try again.');
+    } finally {
+      setIsSubmittingComment(false);
     }
   }
 
+  const handleLike = async () => {
+    if (!isAuthenticated || !localPost || localPost.isLiked) return;
+
+    const originalPost = localPost;
+    try {
+      // Optimistic update
+      setLocalPost(prev => ({
+        ...prev,
+        likesCount: prev.likesCount + 1,
+        isLiked: true
+      }));
+
+      await posts.like(localPost.id);
+    } catch (err) {
+      // Rollback on error
+      setLocalPost(originalPost);
+      showToast({
+        title: "Error",
+        description: "Failed to like post. Please try again.",
+        type: "error"
+      });
+    }
+  };
+
   const handleShare = async () => {
     try {
-      console.log('Sharing post:', post.id)
-      await posts.share(post.id)
+      console.log('Sharing post:', localPost.id)
+      await posts.share(localPost.id)
       setIsShareModalOpen(true)
       if (onShare) {
-        onShare(post.id)
+        onShare(localPost.id)
       }
     } catch (error) {
       console.error('Failed to share post:', error)
@@ -92,7 +154,7 @@ export function PostCard({ post, onLike, onComment, onShare, onPostDelete }: Pos
 
   const handleDelete = async () => {
     try {
-      await posts.delete(post.id)
+      await posts.delete(localPost.id)
       showToast({
         title: "Success",
         description: "Post deleted successfully",
@@ -130,17 +192,17 @@ export function PostCard({ post, onLike, onComment, onShare, onPostDelete }: Pos
             <div className="h-10 w-10 rounded-full bg-muted" />
             <div>
               <Link 
-                to={post.user.profileUrl || `/user/${post.user.id}`}
+                to={localPost.user.profileUrl || `/user/${localPost.user.id}`}
                 className="text-sm font-semibold hover:underline"
               >
-                {post.user.username}
+                {localPost.user.username}
               </Link>
               <p className="text-xs text-muted-foreground">
-                {formatDate(post.timestamp)}
+                {formatDate(localPost.timestamp)}
               </p>
             </div>
           </div>
-          {isAuthenticated && post.user.username === username && (
+          {isAuthenticated && localPost.user.username === username && (
             <div className="relative">
               <Button
                 variant="ghost"
@@ -167,11 +229,11 @@ export function PostCard({ post, onLike, onComment, onShare, onPostDelete }: Pos
           )}
         </div>
         <div className="mt-4 space-y-4">
-          <p className="text-sm">{post.content}</p>
-          {post.imageUrl && (
+          <p className="text-sm">{localPost.content}</p>
+          {localPost.imageUrl && (
             <div className="relative aspect-[4/3] overflow-hidden rounded-lg">
               <img
-                src={getFullImageUrl(post.imageUrl)}
+                src={getFullImageUrl(localPost.imageUrl)}
                 alt="Post image"
                 className="absolute inset-0 h-full w-full object-cover"
               />
@@ -183,32 +245,32 @@ export function PostCard({ post, onLike, onComment, onShare, onPostDelete }: Pos
         <Button 
           variant="ghost" 
           size="sm"
-          onClick={() => onLike?.(post.id)}
+          onClick={handleLike}
           className="flex items-center space-x-2"
         >
-          <Heart className={`h-4 w-4 ${post.isLiked ? "fill-current text-red-500" : ""}`} />
-          <span className="text-xs">{post.likesCount}</span>
+          <Heart className={`h-4 w-4 ${localPost.isLiked ? "fill-current text-red-500" : ""}`} />
+          <span className="text-xs">{localPost.likesCount}</span>
         </Button>
-        <Button 
-          variant="ghost" 
-          size="sm" 
+        <Button
+          variant="ghost"
+          size="sm"
           className="flex items-center space-x-2"
           onClick={toggleComments}
         >
           <MessageCircle className="h-4 w-4" />
-          <span className="text-xs">{post.commentsCount || 0}</span>
+          <span className="text-xs">{localPost.commentsCount || 0}</span>
         </Button>
-        <Button 
-          variant="ghost" 
-          size="sm" 
+        <Button
+          variant="ghost"
+          size="sm"
           className="flex items-center space-x-2"
           onClick={handleShare}
         >
           <Share2 className="h-4 w-4" />
-          <span className="text-xs">{post.shareCount || 0}</span>
+          <span className="text-xs">{localPost.shareCount || 0}</span>
         </Button>
         <ShareModal 
-          postId={post.id} 
+          postId={localPost.id}
           isOpen={isShareModalOpen} 
           onClose={() => setIsShareModalOpen(false)} 
         />
@@ -235,13 +297,21 @@ export function PostCard({ post, onLike, onComment, onShare, onPostDelete }: Pos
               placeholder="Write a comment..."
               className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm"
             />
-            <Button 
-              variant="default" 
+            <Button
+              variant="default"
               size="sm"
               onClick={handleCommentSubmit}
-              disabled={!commentContent.trim()}
+              disabled={!commentContent.trim() || isSubmittingComment}
+              className="min-w-[80px]"
             >
-              Post
+              {isSubmittingComment ? (
+                <div className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Posting...</span>
+                </div>
+              ) : (
+                "Post"
+              )}
             </Button>
           </div>
         </div>

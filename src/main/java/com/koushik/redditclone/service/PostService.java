@@ -175,25 +175,23 @@ public class PostService {
 
   @Transactional
   public void likePost(Long postId, User currentUser) {
-    try {
-      Post post =
-          postRepository
-              .findById(postId)
-              .orElseThrow(
-                  () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Post not found"));
-
-      post.getLikes().add(currentUser);
-      Post savedPost = postRepository.save(post);
-
-      // Temporarily comment out notifications
-      /*
-      if (!savedPost.getUser().equals(currentUser)) {
-        notificationService.notifyLike(savedPost.getUser(), currentUser, savedPost);
-      }
-      */
-    } catch (Exception e) {
-      throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to like post");
+    Post post = postRepository
+        .findById(postId)
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Post not found"));
+    
+    if (post.getLikes().contains(currentUser)) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Already liked");
     }
+    
+    post.getLikes().add(currentUser);
+    Post savedPost = postRepository.save(post);
+
+    // Temporarily comment out notifications
+    /*
+    if (!savedPost.getUser().equals(currentUser)) {
+      notificationService.notifyLike(savedPost.getUser(), currentUser, savedPost);
+    }
+    */
   }
 
   @Transactional

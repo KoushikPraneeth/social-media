@@ -82,7 +82,7 @@ export function UserProfile() {
 
   const handleFollow = async () => {
     if (!user || !username) return;
-    
+
     const originalUser = user;
     setIsFollowingLoading(true);
     try {
@@ -103,12 +103,12 @@ export function UserProfile() {
       }
 
       // Optimistically update UI
-      setUser(prev => {
+      setUser((prev) => {
         if (!prev) return prev;
         return {
           ...prev,
           isFollowing: true,
-          followersCount: (prev.followersCount || 0) + 1
+          followersCount: (prev.followersCount || 0) + 1,
         };
       });
 
@@ -124,7 +124,7 @@ export function UserProfile() {
         setUser(originalUser);
         throw new Error(err.response?.data?.message || "Failed to follow user");
       }
-      
+
       showToast({
         title: "Success",
         description: `Successfully followed ${username}`,
@@ -144,17 +144,17 @@ export function UserProfile() {
 
   const handleUnfollow = async () => {
     if (!user || !username) return;
-    
+
     const originalUser = user;
     setIsFollowingLoading(true);
     try {
       // Optimistically update UI
-      setUser(prev => {
+      setUser((prev) => {
         if (!prev) return prev;
         return {
           ...prev,
           isFollowing: false,
-          followersCount: (prev.followersCount || 0) - 1
+          followersCount: (prev.followersCount || 0) - 1,
         };
       });
 
@@ -167,9 +167,11 @@ export function UserProfile() {
       } catch (err: any) {
         // Revert optimistic update on error
         setUser(originalUser);
-        throw new Error(err.response?.data?.message || "Failed to unfollow user");
+        throw new Error(
+          err.response?.data?.message || "Failed to unfollow user"
+        );
       }
-      
+
       showToast({
         title: "Success",
         description: `Successfully unfollowed ${username}`,
@@ -234,58 +236,59 @@ export function UserProfile() {
             </div>
           </div>
           {loggedInUsername && username !== loggedInUsername && (
-           <>
-             <div className="flex gap-2">
-               <Button
-                 variant={user?.isFollowing ? "destructive" : "default"}
-                 onClick={handleFollow}
-                 disabled={isFollowingLoading}
-                 className="min-w-[100px]"
-               >
-                 <div className="flex items-center gap-2">
-                   {isFollowingLoading && (
-                     <Loader2 className="h-4 w-4 animate-spin" />
-                   )}
-                   <span>
-                     {user?.isFollowing ? "Unfollow" : "Follow"}
-                   </span>
-                 </div>
-               </Button>
-             </div>
+            <>
+              <div className="flex gap-2">
+                <Button
+                  variant={user?.isFollowing ? "destructive" : "default"}
+                  onClick={handleFollow}
+                  disabled={isFollowingLoading}
+                  className="min-w-[100px]"
+                >
+                  <div className="flex items-center gap-2">
+                    {isFollowingLoading && (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    )}
+                    <span>{user?.isFollowing ? "Unfollow" : "Follow"}</span>
+                  </div>
+                </Button>
+              </div>
 
-             <Dialog open={showUnfollowConfirm} onOpenChange={setShowUnfollowConfirm}>
-               <DialogContent>
-                 <DialogHeader>
-                   <DialogTitle>Confirm Unfollow</DialogTitle>
-                   <DialogDescription>
-                     Are you sure you want to unfollow @{user?.username}?
-                   </DialogDescription>
-                 </DialogHeader>
-                 <div className="flex justify-end gap-2">
-                   <Button
-                     variant="outline"
-                     onClick={() => setShowUnfollowConfirm(false)}
-                     disabled={isFollowingLoading}
-                   >
-                     Cancel
-                   </Button>
-                   <Button
-                     variant="destructive"
-                     onClick={handleUnfollow}
-                     disabled={isFollowingLoading}
-                     className="min-w-[100px]"
-                   >
-                     <div className="flex items-center gap-2">
-                       {isFollowingLoading && (
-                         <Loader2 className="h-4 w-4 animate-spin" />
-                       )}
-                       <span>Unfollow</span>
-                     </div>
-                   </Button>
-                 </div>
-               </DialogContent>
-             </Dialog>
-           </>
+              <Dialog
+                open={showUnfollowConfirm}
+                onOpenChange={setShowUnfollowConfirm}
+              >
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Confirm Unfollow</DialogTitle>
+                    <DialogDescription>
+                      Are you sure you want to unfollow @{user?.username}?
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowUnfollowConfirm(false)}
+                      disabled={isFollowingLoading}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={handleUnfollow}
+                      disabled={isFollowingLoading}
+                      className="min-w-[100px]"
+                    >
+                      <div className="flex items-center gap-2">
+                        {isFollowingLoading && (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        )}
+                        <span>Unfollow</span>
+                      </div>
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </>
           )}
         </div>
       </div>
