@@ -7,15 +7,24 @@ import { User, Post } from "../../types";
 import { posts, users } from "../../lib/api";
 import { useToast } from "../../contexts/ToastContext";
 import { useAuth } from "../../contexts/auth/AuthContext";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "../ui/dialog";
 
 export function UserProfile() {
   const { username } = useParams<{ username: string }>();
   const [user, setUser] = useState<User | null>(null);
   const [userPosts, setUserPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isFollowingLoading, setIsFollowingLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [showUnfollowConfirm, setShowUnfollowConfirm] = useState(false);
   const { showToast } = useToast();
 
   const fetchUserData = async () => {
@@ -73,7 +82,9 @@ export function UserProfile() {
 
   const handleFollow = async () => {
     if (!user || !username) return;
-    console.log("Attempting to", user.isFollowing ? "unfollow" : "follow", username);
+    
+    const originalUser = user;
+    setIsFollowingLoading(true);
     try {
       const token = localStorage.getItem("token");
       if (!token) {
@@ -85,33 +96,95 @@ export function UserProfile() {
         return;
       }
 
-      let response;
       if (user.isFollowing) {
-        console.log("Making unfollow request");
-        response = await users.unfollow(username);
-      } else {
-        console.log("Making follow request");
-        response = await users.follow(username);
+        setShowUnfollowConfirm(true);
+        setIsFollowingLoading(false);
+        return;
       }
-      
-      console.log("Follow/unfollow response:", response);
-      
-      // Update user state with the response data
-      const updatedUser = response.data.data;
-      setUser(updatedUser);
+
+      // Optimistically update UI
+      setUser(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          isFollowing: true,
+          followersCount: (prev.followersCount || 0) + 1
+        };
+      });
+
+      try {
+        const response = await users.follow(username);
+        if (response.status >= 400) {
+          // Revert optimistic update on error
+          setUser(originalUser);
+          throw new Error(response.data.message);
+        }
+      } catch (err: any) {
+        // Revert optimistic update on error
+        setUser(originalUser);
+        throw new Error(err.response?.data?.message || "Failed to follow user");
+      }
       
       showToast({
         title: "Success",
-        description: `Successfully ${user.isFollowing ? "unfollowed" : "followed"} ${username}`,
+        description: `Successfully followed ${username}`,
         type: "success",
       });
     } catch (err: any) {
       console.error("Follow error:", err);
       showToast({
         title: "Error",
-        description: err.response?.data?.message || "Failed to update follow status",
+        description: err.message,
         type: "error",
       });
+    } finally {
+      setIsFollowingLoading(false);
+    }
+  };
+
+  const handleUnfollow = async () => {
+    if (!user || !username) return;
+    
+    const originalUser = user;
+    setIsFollowingLoading(true);
+    try {
+      // Optimistically update UI
+      setUser(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          isFollowing: false,
+          followersCount: (prev.followersCount || 0) - 1
+        };
+      });
+
+      let response;
+      try {
+        response = await users.unfollow(username);
+        if (response.status >= 400) {
+          throw new Error(response.data.message);
+        }
+      } catch (err: any) {
+        // Revert optimistic update on error
+        setUser(originalUser);
+        throw new Error(err.response?.data?.message || "Failed to unfollow user");
+      }
+      
+      showToast({
+        title: "Success",
+        description: `Successfully unfollowed ${username}`,
+        type: "success",
+      });
+    } catch (err: any) {
+      console.error("Unfollow error:", err);
+      showToast({
+        title: "Error",
+        description: err.message,
+        type: "error",
+      });
+    } finally {
+      setIsFollowingLoading(false);
+      setShowUnfollowConfirm(false);
     }
   };
 
@@ -161,12 +234,58 @@ export function UserProfile() {
             </div>
           </div>
           {loggedInUsername && username !== loggedInUsername && (
-            <Button
-              variant={user?.isFollowing ? "outline" : "default"}
-              onClick={handleFollow}
-            >
-              {user?.isFollowing ? "Unfollow" : "Follow"}
-            </Button>
+           <>
+             <div className="flex gap-2">
+               <Button
+                 variant={user?.isFollowing ? "destructive" : "default"}
+                 onClick={handleFollow}
+                 disabled={isFollowingLoading}
+                 className="min-w-[100px]"
+               >
+                 <div className="flex items-center gap-2">
+                   {isFollowingLoading && (
+                     <Loader2 className="h-4 w-4 animate-spin" />
+                   )}
+                   <span>
+                     {user?.isFollowing ? "Unfollow" : "Follow"}
+                   </span>
+                 </div>
+               </Button>
+             </div>
+
+             <Dialog open={showUnfollowConfirm} onOpenChange={setShowUnfollowConfirm}>
+               <DialogContent>
+                 <DialogHeader>
+                   <DialogTitle>Confirm Unfollow</DialogTitle>
+                   <DialogDescription>
+                     Are you sure you want to unfollow @{user?.username}?
+                   </DialogDescription>
+                 </DialogHeader>
+                 <div className="flex justify-end gap-2">
+                   <Button
+                     variant="outline"
+                     onClick={() => setShowUnfollowConfirm(false)}
+                     disabled={isFollowingLoading}
+                   >
+                     Cancel
+                   </Button>
+                   <Button
+                     variant="destructive"
+                     onClick={handleUnfollow}
+                     disabled={isFollowingLoading}
+                     className="min-w-[100px]"
+                   >
+                     <div className="flex items-center gap-2">
+                       {isFollowingLoading && (
+                         <Loader2 className="h-4 w-4 animate-spin" />
+                       )}
+                       <span>Unfollow</span>
+                     </div>
+                   </Button>
+                 </div>
+               </DialogContent>
+             </Dialog>
+           </>
           )}
         </div>
       </div>
