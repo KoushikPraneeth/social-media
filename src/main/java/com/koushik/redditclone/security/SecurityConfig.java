@@ -18,6 +18,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
+import org.springframework.http.HttpMethod;
 
 @Configuration
 @EnableWebSecurity
@@ -56,9 +57,14 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/auth/**", "/h2-console/**", "/actuator/**").permitAll()
                 .requestMatchers("/uploads/**", "/api/images/**").permitAll()
-                .requestMatchers("/api/users/**").permitAll() // Simplified - allow all user endpoints
-                .requestMatchers("/api/posts/**").permitAll()  // Allow viewing posts
-                .requestMatchers("/api/posts/*/like", "/api/posts/*/unlike").authenticated() // Require auth for actions
+                .requestMatchers(HttpMethod.GET, "/api/users/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/users/*/follow", "/api/users/*/unfollow").authenticated()
+                // Public endpoints for reading posts
+                .requestMatchers(HttpMethod.GET, "/api/posts/**").permitAll()
+                // Secured endpoints for post actions
+                .requestMatchers(HttpMethod.POST, "/api/posts/**").authenticated()
+                .requestMatchers(HttpMethod.PUT, "/api/posts/**").authenticated()
+                .requestMatchers(HttpMethod.DELETE, "/api/posts/**").authenticated()
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session

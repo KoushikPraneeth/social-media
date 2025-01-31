@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -96,6 +97,20 @@ public class PostController {
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @DeleteMapping("/{postId}")
+    public ResponseEntity<?> deletePost(
+            @PathVariable Long postId,
+            @AuthenticationPrincipal User currentUser) {
+        try {
+            postService.deletePost(postId, currentUser);
+            return ResponseEntity.ok().build();
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("An unexpected error occurred");
         }
     }
 }

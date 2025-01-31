@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 public class CommentResponse {
     private Long id;
     private String content;
-    private LocalDateTime timestamp;
+    private LocalDateTime createdAt;
     private UserSummary user;
 
     @Data

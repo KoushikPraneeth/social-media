@@ -66,7 +66,7 @@ public class User implements UserDetails {
     private Set<User> followers = new HashSet<>();
 
     @Builder.Default
-    @ManyToMany(mappedBy = "followers")
+    @ManyToMany(mappedBy = "followers", fetch = FetchType.EAGER)
     private Set<User> following = new HashSet<>();
 
     @Builder.Default

@@ -155,7 +155,7 @@ public class PostService {
             return CommentResponse.builder()
                 .id(comment.getId())
                 .content(comment.getContent())
-                .timestamp(comment.getTimestamp())
+                .createdAt(comment.getTimestamp())
                 .user(CommentResponse.UserSummary.builder()
                     .id(comment.getUser().getId())
                     .username(comment.getUser().getUsername())
@@ -228,6 +228,30 @@ public class PostService {
       notificationService.notifyShare(savedPost.getUser(), currentUser, savedPost);
     }
     */
+  }
+
+  @Transactional
+  public void deletePost(Long postId, User currentUser) {
+    try {
+      Post post = postRepository
+          .findById(postId)
+          .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Post not found"));
+
+      if (!post.getUser().getUsername().equals(currentUser.getUsername())) {
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
+            String.format("You don't have permission to delete this post. Owner: %s, Current: %s", 
+                post.getUser().getUsername(), currentUser.getUsername()));
+      }
+
+      // Clear comments first to ensure proper cascade deletion
+      post.getComments().clear();
+      postRepository.delete(post);
+    } catch (ResponseStatusException e) {
+      throw e; // Re-throw existing status exceptions
+    } catch (Exception e) {
+      throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, 
+          "Failed to delete post: " + e.getMessage());
+    }
   }
 
   private PostResponse mapToPostResponse(Post post) {

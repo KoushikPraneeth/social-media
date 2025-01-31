@@ -6,6 +6,7 @@ import { PostCard } from "../posts/PostCard";
 import { User, Post } from "../../types";
 import { posts, users } from "../../lib/api";
 import { useToast } from "../../contexts/ToastContext";
+import { useAuth } from "../../contexts/auth/AuthContext";
 
 export function UserProfile() {
   const { username } = useParams<{ username: string }>();
@@ -72,19 +73,43 @@ export function UserProfile() {
 
   const handleFollow = async () => {
     if (!user || !username) return;
+    console.log("Attempting to", user.isFollowing ? "unfollow" : "follow", username);
     try {
-      if (user.isFollowing) {
-        await users.unfollow(username);
-      } else {
-        await users.follow(username);
+      const token = localStorage.getItem("token");
+      if (!token) {
+        showToast({
+          title: "Error",
+          description: "You must be logged in to follow users",
+          type: "error",
+        });
+        return;
       }
-      setUser((prev) =>
-        prev ? { ...prev, isFollowing: !prev.isFollowing } : null
-      );
+
+      let response;
+      if (user.isFollowing) {
+        console.log("Making unfollow request");
+        response = await users.unfollow(username);
+      } else {
+        console.log("Making follow request");
+        response = await users.follow(username);
+      }
+      
+      console.log("Follow/unfollow response:", response);
+      
+      // Update user state with the response data
+      const updatedUser = response.data.data;
+      setUser(updatedUser);
+      
+      showToast({
+        title: "Success",
+        description: `Successfully ${user.isFollowing ? "unfollowed" : "followed"} ${username}`,
+        type: "success",
+      });
     } catch (err: any) {
+      console.error("Follow error:", err);
       showToast({
         title: "Error",
-        description: "Failed to update follow status",
+        description: err.response?.data?.message || "Failed to update follow status",
         type: "error",
       });
     }
@@ -103,6 +128,8 @@ export function UserProfile() {
       </div>
     );
   }
+
+  const { username: loggedInUsername } = useAuth();
 
   if (error) {
     return (
@@ -133,12 +160,12 @@ export function UserProfile() {
               </div>
             </div>
           </div>
-          {user && username !== user.username && (
+          {loggedInUsername && username !== loggedInUsername && (
             <Button
-              variant={user.isFollowing ? "outline" : "default"}
+              variant={user?.isFollowing ? "outline" : "default"}
               onClick={handleFollow}
             >
-              {user.isFollowing ? "Unfollow" : "Follow"}
+              {user?.isFollowing ? "Unfollow" : "Follow"}
             </Button>
           )}
         </div>

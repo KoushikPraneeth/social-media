@@ -1,9 +1,8 @@
 package com.koushik.redditclone.controller;
 
-import java.util.Optional;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import com.koushik.redditclone.dto.ApiResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -24,23 +23,28 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping("/{username}")
-    public ResponseEntity<UserResponse> getUserProfile(@PathVariable String username) {
-        return ResponseEntity.ok(userService.getUserProfile(username));
+    public ResponseEntity<ApiResponse<UserResponse>> getUserProfile(@PathVariable String username) {
+        UserResponse profile = userService.getUserProfile(username);
+        return ResponseEntity.ok(new ApiResponse<>(profile, true, null));
     }
 
-    @PostMapping("/{userId}/follow")
-    public ResponseEntity<Void> followUser(
+    @PostMapping("/{username}/follow")
+    public ResponseEntity<ApiResponse<UserResponse>> followUser(
             @AuthenticationPrincipal User currentUser,
-            @PathVariable Long userId) {
-        userService.followUser(currentUser, userId);
-        return ResponseEntity.ok().build();
+            @PathVariable String username) {
+        User userToFollow = userService.getUserByUsername(username);
+        userService.followUser(currentUser, userToFollow.getId());
+        UserResponse profile = userService.getUserProfile(username);
+        return ResponseEntity.ok(new ApiResponse<>(profile, true, null));
     }
 
-    @PostMapping("/{userId}/unfollow")
-    public ResponseEntity<Void> unfollowUser(
+    @PostMapping("/{username}/unfollow")
+    public ResponseEntity<ApiResponse<UserResponse>> unfollowUser(
             @AuthenticationPrincipal User currentUser,
-            @PathVariable Long userId) {
-        userService.unfollowUser(currentUser, userId);
-        return ResponseEntity.ok().build();
+            @PathVariable String username) {
+        User userToUnfollow = userService.getUserByUsername(username);
+        userService.unfollowUser(currentUser, userToUnfollow.getId());
+        UserResponse profile = userService.getUserProfile(username);
+        return ResponseEntity.ok(new ApiResponse<>(profile, true, null));
     }
 }

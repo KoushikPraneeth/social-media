@@ -4,6 +4,7 @@ import type {
   PaginatedResponse,
   AuthResponse,
   Post,
+  User,
 } from "../types";
 
 export const BASE_URL = "http://localhost:8080";
@@ -74,7 +75,7 @@ export const trends = {
 };
 
 export const users = {
-  getById: (username: string) => api.get(`/api/users/${username}`),
+  getById: (username: string) => api.get<ApiResponse<User>>(`/api/users/${username}`),
   getProfile: () => api.get("/api/users/me"),
   follow: (username: string) => api.post(`/api/users/${username}/follow`),
   unfollow: (username: string) => api.post(`/api/users/${username}/unfollow`),

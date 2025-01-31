@@ -3,6 +3,7 @@ package com.koushik.redditclone.controller;
 import com.koushik.redditclone.dto.AuthRequest;
 import com.koushik.redditclone.dto.AuthResponse;
 import com.koushik.redditclone.dto.RegisterRequest;
+import com.koushik.redditclone.dto.UserDTO;
 import com.koushik.redditclone.model.User;
 import com.koushik.redditclone.repository.UserRepository;
 import com.koushik.redditclone.security.JwtUtils;
@@ -74,7 +75,10 @@ public class AuthController {
 
             return ResponseEntity.ok(AuthResponse.builder()
                     .token(token)
-                    .username(user.getUsername())
+                    .user(UserDTO.builder()
+                            .id(user.getId())
+                            .username(user.getUsername())
+                            .build())
                     .message("User registered successfully")
                     .build());
         } catch (Exception e) {
@@ -95,13 +99,16 @@ public class AuthController {
                     new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
             );
 
-            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-            String token = jwtUtils.generateToken(userDetails);
+            User user = (User) authentication.getPrincipal();
+            String token = jwtUtils.generateToken(user);
             logger.debug("JWT token generated for user: {}", request.getUsername());
 
             return ResponseEntity.ok(AuthResponse.builder()
                     .token(token)
-                    .username(userDetails.getUsername())
+                    .user(UserDTO.builder()
+                            .id(user.getId())
+                            .username(user.getUsername())
+                            .build())
                     .message("Login successful")
                     .build());
         } catch (Exception e) {

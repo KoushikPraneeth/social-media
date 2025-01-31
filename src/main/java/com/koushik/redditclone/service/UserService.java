@@ -3,6 +3,8 @@ package com.koushik.redditclone.service;
 import java.io.IOException;
 import java.util.Optional;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import com.koushik.redditclone.dto.UserResponse;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -22,16 +24,30 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final NotificationService notificationService;
 
+    @Transactional
     public UserResponse getUserProfile(String username) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        // Get current user from security context
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        boolean isFollowing = false;
+        
+        if (authentication != null && authentication.isAuthenticated()) {
+            String currentUsername = authentication.getName();
+            User currentUser = userRepository.findByUsername(currentUsername)
+                .orElse(null);
+            if (currentUser != null) {
+                isFollowing = currentUser.getFollowing().contains(user);
+            }
+        }
 
         return UserResponse.builder()
                 .id(user.getId())
                 .username(user.getUsername())
                 .followersCount(user.getFollowers().size())
                 .followingCount(user.getFollowing().size())
-                .isFollowing(false) // Default to false for public view
+                .isFollowing(isFollowing)
                 .build();
     }
 
@@ -74,7 +90,9 @@ public class UserService {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
         currentUser.getFollowing().add(userToFollow);
+        userToFollow.getFollowers().add(currentUser);
         userRepository.save(currentUser);
+        userRepository.save(userToFollow);
         notificationService.notifyNewFollower(userToFollow, currentUser);
     }
 
@@ -88,6 +106,8 @@ public class UserService {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
         currentUser.getFollowing().remove(userToUnfollow);
+        userToUnfollow.getFollowers().remove(currentUser);
         userRepository.save(currentUser);
+        userRepository.save(userToUnfollow);
     }
 }
