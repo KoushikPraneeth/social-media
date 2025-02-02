@@ -1,6 +1,6 @@
-# Social Media Platform (Reddit Clone)
+# Social Media Platform 
 
-An end-to-end social media application inspired by Reddit. This project features a robust Java Spring Boot backend together with a modern React frontend built with Vite and TypeScript. It supports user authentication, post creation (with image upload and automatic hashtag extraction), commenting, liking, sharing, real-time notifications via WebSocket, trending hashtags, and more.
+An end-to-end social media application. This project features a robust Java Spring Boot backend together with a modern React frontend built with Vite and TypeScript. It supports user authentication, post creation, commenting, liking, sharing, and more.
 
 ---
 
@@ -24,24 +24,25 @@ An end-to-end social media application inspired by Reddit. This project features
 
 This project is split into two parts:
 
-1. **Backend** – A Spring Boot application that handles user management, posts, comments, likes, shares, notifications, and trending hashtag calculations. It uses PostgreSQL for data persistence and JWT for secure authentication.
-2. **Frontend** – A React application built with Vite and TypeScript. It offers a responsive user interface built with Tailwind CSS and various Radix UI components. The app communicates with the backend via Axios and manages authentication, posts, notifications, and real-time features.
+1. **Backend** – A Spring Boot application that handles user management, posts, comments, likes, shares, and other core functionalities. It uses PostgreSQL for data persistence and JWT for secure authentication.
+2. **Frontend** – A React application built with Vite and TypeScript. It offers a responsive user interface built with Tailwind CSS and various Radix UI components. The app communicates with the backend via Axios and manages authentication, posts, and real-time features.
 
 ---
 
 ## Tech Stack
 
 ### Backend
+
 - **Language / Framework:** Java, Spring Boot
 - **Build Tool:** Maven (with included Maven wrapper: mvnw & mvnw.cmd)
 - **Database:** PostgreSQL
 - **ORM:** Spring Data JPA with Hibernate
 - **Security:** Spring Security with JWT (expiration: 24 hours), BCrypt password encoding
 - **Real-time:** WebSocket using STOMP protocol (configured with SockJS support)
-- **Scheduling:** Spring’s @Scheduled for trending hashtag calculations
 - **File Upload:** Multipart file support (max size: 10MB)
 
 ### Frontend
+
 - **Language / Framework:** React v18.2.0, TypeScript 5.2.2
 - **Bundler:** Vite v5.0.8
 - **Styling:** TailwindCSS v3.4.17, custom CSS
@@ -58,24 +59,16 @@ This project is split into two parts:
   - Register and Login using JWT-based authentication.
   - Passwords encrypted via BCrypt.
   - Protected endpoints with stateless session management.
-  
 - **Post Management:**
+
   - Create posts with text content and optional image attachments.
   - Automatic extraction of hashtags (e.g., #example) from post text.
   - Like/Unlike functionality with real-time like counts.
   - Commenting system with paginated responses.
   - Sharing posts with share count updates.
 
-- **Trending Hashtags:**
-  - Hourly recalculation of trending hashtags based on posts from the past 24 hours.
-  - Time-weighted scores that decay linearly (new posts score higher).
-  - Top 10 hashtags maintained in real-time.
-
-- **Real-time Notifications:**
-  - Notifications for likes, comments, shares, and new followers.
-  - WebSocket-based notifications with STOMP endpoints.
-  
 - **User Profiles & Social Interactions:**
+
   - View profiles, follow/unfollow users, and update profile information.
   - Activity feeds for user-related actions.
 
@@ -83,7 +76,6 @@ This project is split into two parts:
   - Responsive and modern user interface.
   - Loading states, error messages, and toast notifications.
   - "Load More" functionality for posts using pagination.
-  - Trending tags component for quick navigation.
 
 ---
 
@@ -96,10 +88,10 @@ src/main/java/com/koushik/redditclone/
 ├── config/          # Application-specific configurations (e.g., WebSocketConfig)
 ├── controller/      # REST API controllers (AuthController, PostController, etc.)
 ├── dto/             # Data Transfer Objects (AuthResponse, CreatePostRequest, etc.)
-├── model/           # Entity classes (User, Post, Comment, ImageData, Notification)
+├── model/           # Entity classes (User, Post, Comment, ImageData)
 ├── repository/      # JPA repositories (UserRepository, PostRepository, etc.)
 ├── security/        # Security configuration (SecurityConfig, JwtAuthenticationFilter, etc.)
-├── service/         # Business logic (PostService, NotificationService, TrendingService, etc.)
+├── service/         # Business logic (PostService, UserService, etc.)
 └── resources/       # Application properties and resource files
     └── application.properties
 ```
@@ -112,7 +104,7 @@ frontend/
 ├── src/
 │   ├── components/  # UI components divided by feature:
 │   │   ├── auth/        # Login, Register components
-│   │   ├── layout/      # Layout components (Home, Navbar, TrendingTags, etc.)
+│   │   ├── layout/      # Layout components (Home, Navbar, UserProfile, etc.)
 │   │   ├── posts/       # Post-related components (PostCard, CreatePost, CommentsList)
 │   │   └── shared/      # Reusable components (ProtectedRoute, ErrorBoundary)
 │   ├── contexts/    # React contexts (AuthContext, ThemeContext, ToastContext)
@@ -168,18 +160,10 @@ management.endpoint.health.show-details=always
   - Uses a JWT authentication filter before `UsernamePasswordAuthenticationFilter`.
   - Restricts endpoints except for public routes such as `/auth/**`, `/uploads/**`, and certain GET endpoints.
   - Uses BCryptPasswordEncoder for password security.
-  
-### WebSocket & Notifications
+
+### WebSocket
 
 - WebSocket is enabled via `WebSocketConfig.java`, listening on `/ws` with SockJS fallback.
-- `NotificationService` creates notifications on events (like, comment, share, follow) and is designed to work with real-time broadcasting.
-
-### Trending Hashtags
-
-- The `TrendingService` calculates trending hashtags every hour by:
-  - Scanning posts from the past 24 hours.
-  - Using a time decay algorithm to score hashtags.
-  - Keeping the top 10 trending hashtags updated in-memory.
 
 ---
 
@@ -207,19 +191,19 @@ management.endpoint.health.show-details=always
 - Endpoints are organized by feature:
   - Authentication (`auth.login`, `auth.register`)
   - Posts (`posts.getAll`, `posts.create`, etc.)
-  - Trends (`trends.getHashtags`)
   - Users (`users.getProfile`, `users.follow`, etc.)
-  - Notifications (`notifications.getAll`)
 
 ---
 
 ## API Endpoints
 
 ### Authentication
+
 - **POST** `/auth/login` – Login a user (expects FormData containing username and password).
 - **POST** `/auth/register` – Register a new user (expects FormData containing username, email, and password).
 
 ### Posts
+
 - **GET** `/api/posts` – Retrieve paginated list of posts.
 - **POST** `/api/posts` – Create a new post (supports image upload via multipart/form-data).
 - **GET** `/api/posts/user/{username}` – Retrieve a user’s posts.
@@ -231,13 +215,10 @@ management.endpoint.health.show-details=always
 - **POST** `/api/posts/{postId}/share` – Share a post.
 - **DELETE** `/api/posts/{postId}` – Delete a post (requires ownership).
 
-### Trending & Notifications
-- **GET** `/api/trends` – Retrieve trending hashtags.
+### User Actions
+
 - **POST** `/api/users/{username}/follow` – Follow a user.
 - **POST** `/api/users/{username}/unfollow` – Unfollow a user.
-- **GET** `/api/notifications` – Retrieve notifications (paginated).
-- **PUT** `/api/notifications/{notificationId}/read` – Mark a notification as read.
-- **PUT** `/api/notifications/read-all` – Mark all notifications as read.
 
 ---
 
@@ -246,15 +227,18 @@ management.endpoint.health.show-details=always
 ### Backend
 
 1. **Prerequisites:**
+
    - Java 11 or higher installed.
    - Maven (or use the provided Maven wrapper).
    - PostgreSQL running on your machine.
 
 2. **Database Setup:**
+
    - Create a PostgreSQL database named `socialmediadb` (or update the URL and credentials as needed).
    - Ensure the user credentials in `application.properties` match your PostgreSQL settings.
 
 3. **Build & Run:**
+
    - From the project root, run:
      ```
      ./mvnw clean install
@@ -267,9 +251,11 @@ management.endpoint.health.show-details=always
 ### Frontend
 
 1. **Prerequisites:**
+
    - Node.js and npm installed.
 
 2. **Installation:**
+
    - Navigate to the `frontend` folder:
      ```
      cd frontend
@@ -277,6 +263,7 @@ management.endpoint.health.show-details=always
      ```
 
 3. **Development Server:**
+
    - Start the development server:
      ```
      npm run dev
@@ -294,6 +281,7 @@ management.endpoint.health.show-details=always
 ## Development Workflow
 
 - **Backend:**
+
   - Use Maven commands to run tests (`./mvnw test`), build, and run the Spring Boot application.
   - View detailed logs based on logging levels set in `application.properties`.
   - Monitor via Actuator endpoints (e.g., `/actuator/health`).
@@ -315,8 +303,7 @@ This project is licensed under the MIT License.
 ## Contributing
 
 Contributions are welcome! Please adhere to the following guidelines:
+
 - Fork the repository and create a feature branch.
 - Follow code conventions and include tests for new features.
 - Open a pull request describing your changes.
-
----
