@@ -15,8 +15,7 @@ An end-to-end social media application. This project features a robust Java Spri
 - [API Endpoints](#api-endpoints)
 - [Setup & Installation](#setup--installation)
 - [Development Workflow](#development-workflow)
-- [License](#license)
-- [Contributing](#contributing)
+
 
 ---
 
