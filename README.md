@@ -294,16 +294,3 @@ management.endpoint.health.show-details=always
 
 ---
 
-## License
-
-This project is licensed under the MIT License.
-
----
-
-## Contributing
-
-Contributions are welcome! Please adhere to the following guidelines:
-
-- Fork the repository and create a feature branch.
-- Follow code conventions and include tests for new features.
-- Open a pull request describing your changes.
