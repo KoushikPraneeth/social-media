@@ -1,6 +1,8 @@
 # Social Media Platform 
 
 An end-to-end social media application. This project features a robust Java Spring Boot backend together with a modern React frontend built with Vite and TypeScript. It supports user authentication, post creation, commenting, liking, sharing, and more.
+![image](https://github.com/user-attachments/assets/7e2e529b-00f0-49b0-8f36-0496e3d1d1a4)
+
 
 ---
 
