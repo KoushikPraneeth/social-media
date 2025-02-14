@@ -5,6 +5,7 @@ import { Post } from '../../types'
 import { posts } from '../../lib/api'
 import { Loader2 } from 'lucide-react'
 import { Button } from '../ui/button'
+import { useAuth } from '../../contexts/auth/AuthContext'
 
 export function Home() {
   const [allPosts, setAllPosts] = useState<Post[]>([])
@@ -30,9 +31,11 @@ export function Home() {
     }
   }
 
+  const { isAuthenticated } = useAuth();
+
   useEffect(() => {
     fetchPosts()
-  }, [])
+  }, [isAuthenticated])
 
     const handleLike = async (postId: number) => {
     try {

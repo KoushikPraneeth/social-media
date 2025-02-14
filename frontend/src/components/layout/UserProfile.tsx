@@ -17,6 +17,7 @@ import {
 
 export function UserProfile() {
   const { username } = useParams<{ username: string }>();
+  const { username: loggedInUsername, isAuthenticated } = useAuth();
   const [user, setUser] = useState<User | null>(null);
   const [userPosts, setUserPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
@@ -78,7 +79,14 @@ export function UserProfile() {
 
   useEffect(() => {
     fetchUserData();
-  }, [username]);
+  }, [username, isAuthenticated]);
+
+  // Reload posts when auth state changes
+  useEffect(() => {
+    if (user && isAuthenticated) {
+      fetchUserPosts(page);
+    }
+  }, [isAuthenticated]);
 
   const handleFollow = async () => {
     if (!user || !username) return;
@@ -203,8 +211,6 @@ export function UserProfile() {
       </div>
     );
   }
-
-  const { username: loggedInUsername } = useAuth();
 
   if (error) {
     return (

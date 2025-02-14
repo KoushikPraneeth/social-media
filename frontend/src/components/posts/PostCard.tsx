@@ -15,9 +15,10 @@ interface PostCardProps {
   onComment?: (postId: number, content: string) => void
   onShare?: (postId: number) => void
   onPostDelete?: () => void
+  onLike?: (postId: number) => Promise<void>
 }
 
-export function PostCard({ post, onComment, onShare, onPostDelete }: PostCardProps) {
+export function PostCard({ post, onComment, onShare, onPostDelete, onLike }: PostCardProps) {
   const [isCommenting, setIsCommenting] = useState(false)
   const [commentContent, setCommentContent] = useState('')
   const [comments, setComments] = useState<Comment[]>([])
@@ -115,24 +116,34 @@ export function PostCard({ post, onComment, onShare, onPostDelete }: PostCardPro
   }
 
   const handleLike = async () => {
-    if (!isAuthenticated || !localPost || localPost.isLiked) return;
+    if (!isAuthenticated || !localPost) return;
+
+    if (onLike) {
+      await onLike(localPost.id);
+      return;
+    }
 
     const originalPost = localPost;
     try {
-      // Optimistic update
+      // Optimistic update based on current state
       setLocalPost(prev => ({
         ...prev,
-        likesCount: prev.likesCount + 1,
-        isLiked: true
+        likesCount: prev.isLiked ? prev.likesCount - 1 : prev.likesCount + 1,
+        isLiked: !prev.isLiked
       }));
 
-      await posts.like(localPost.id);
-    } catch (err) {
+      // Call appropriate endpoint based on current state
+      if (localPost.isLiked) {
+        await posts.unlike(localPost.id);
+      } else {
+        await posts.like(localPost.id);
+      }
+    } catch (err: any) {
       // Rollback on error
       setLocalPost(originalPost);
       showToast({
         title: "Error",
-        description: "Failed to like post. Please try again.",
+        description: err.response?.data?.message || "Failed to update like status. Please try again.",
         type: "error"
       });
     }
