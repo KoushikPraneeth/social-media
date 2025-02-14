@@ -1,10 +1,39 @@
-HELP.md
+### macOS ###
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+### Node ###
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+### Maven ###
 target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
 
-### STS ###
+### IDE - VSCode ###
+.vscode/
+
+### IDE - Eclipse/STS ###
 .apt_generated
 .classpath
 .factorypath
@@ -13,25 +42,19 @@ target/
 .springBeans
 .sts4-cache
 
-### IntelliJ IDEA ###
+### IDE - IntelliJ IDEA ###
 .idea
 *.iws
 *.iml
 *.ipr
 
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
+### Build directories ###
 /dist/
-/nbdist/
-/.nb-gradle/
-build/
+/build/
+frontend/dist/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
-### VS Code ###
-.vscode/
-
-frontend/node_modules
-frontend/dist
-uploads/
+### Project specific ###
+/uploads/
+HELP.md
